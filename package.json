@@ -1,0 +1,13 @@
+{
+  "name": "votezap",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "server": "bun --cwd backend run dev",
+    "client": "bun --cwd frontend run dev",
+    "dev": "bun run server & bun run client"
+  }
+}
