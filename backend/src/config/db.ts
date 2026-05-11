@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const connectDB = async (): Promise<void> => {
   try {
     const mongoUri = process.env.MONGO_URI;
+    console.log(mongoUri)
 
     if (!mongoUri) {
       console.error('ERROR: MONGO_URI is not defined in environment variables.');
@@ -21,8 +22,9 @@ const connectDB = async (): Promise<void> => {
       console.warn('MongoDB Disconnected. Check your network or Atlas cluster.');
     });
 
-  } catch (error: any) {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error : 'Unknown database connection error';
+    console.error(`Error connecting to MongoDB: ${message}`);
     process.exit(1);
   }
 };

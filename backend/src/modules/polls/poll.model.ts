@@ -6,7 +6,7 @@ interface IOption {
 
 interface IQuestion {
     text: string,
-    isMandatory: Boolean,
+    isMandatory: boolean,
     options: IOption[]
 }
 
@@ -25,7 +25,7 @@ const QuestionSchema = new Schema<IQuestion>({
     isMandatory: { type: Boolean, default: true, required: true },
     options: {
         type: [{ text: String }],
-        validate: [(arr: any[]) => arr.length >= 2, 'A question must have at least two options']
+        validate: [(arr: IOption[]) => arr.length >= 2, 'A question must have at least two options']
     }
 })
 

@@ -4,7 +4,7 @@ import connectDB from './config/db';
 
 dotenv.config();
 
-const startServer = async () => {
+const startServer = async (): Promise<void> => {
   await connectDB();
 
   const PORT = process.env.PORT || 5000;
@@ -13,9 +13,13 @@ const startServer = async () => {
     console.log(`Server running on port ${PORT}`);
   });
 
-  process.on('unhandledRejection', (err: any) => {
+  process.on('unhandledRejection', (err: unknown) => {
     console.log('UNHANDLED REJECTION! Shutting down...');
-    console.log(err.name, err.message);
+    if (err instanceof Error) {
+      console.log(err.name, err.message);
+    } else {
+      console.log(err);
+    }
     server.close(() => {
       process.exit(1);
     });
