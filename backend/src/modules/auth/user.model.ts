@@ -4,6 +4,8 @@ export interface IUser {
   email: string;
   googleId?: string;
   customIdpId?: string;
+  refreshTokenHash?: string;
+  refreshTokenExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,7 +21,9 @@ const UserSchema = new Schema<IUser>({
     trim: true
   },
   googleId: { type: String, required: false },
-  customIdpId: { type: String, required: false }
+  customIdpId: { type: String, required: false },
+  refreshTokenHash: { type: String, required: false, select: false },
+  refreshTokenExpiresAt: { type: Date, required: false, select: false }
 }, {
   timestamps: true
 });
