@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'crypto';
 import type { CookieOptions, Response } from 'express';
-import jwt, { type JwtPayload } from 'jsonwebtoken';
+import jwt, { type JwtPayload, type VerifyOptions } from 'jsonwebtoken';
 import type { StringValue } from 'ms';
 import { env } from '../../config/env';
 import { UnauthorizedError } from '../../utils/AppError';
@@ -45,9 +45,9 @@ const clearCookieOptions: CookieOptions = {
   path: '/'
 };
 
-const verifyJwt = (token: string, secret: string): JwtPayload => {
+const verifyJwt = (token: string, secret: string, options?: VerifyOptions): JwtPayload => {
   try {
-    const decoded = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, secret, options);
 
     if (typeof decoded === 'string') {
       throw new UnauthorizedError('Authentication failed');
@@ -104,8 +104,8 @@ export const verifyAccessToken = (token: string): AccessTokenPayload => {
   return payload as AccessTokenPayload;
 };
 
-export const verifyRefreshToken = (token: string): RefreshTokenPayload => {
-  const payload = verifyJwt(token, env.JWT_REFRESH_SECRET);
+export const verifyRefreshToken = (token: string, options?: VerifyOptions): RefreshTokenPayload => {
+  const payload = verifyJwt(token, env.JWT_REFRESH_SECRET, options);
 
   if (payload.type !== 'refresh' || typeof payload.userId !== 'string') {
     throw new UnauthorizedError('Authentication failed');

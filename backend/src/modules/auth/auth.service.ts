@@ -110,7 +110,7 @@ export const loginWithGoogle = async (idToken: string): Promise<AuthSession> => 
 
     const payload = ticket.getPayload();
 
-    if (!payload?.email || !payload.sub) {
+    if (!payload?.email || !payload.sub || !payload.email_verified) {
       throw new UnauthorizedError('Authentication failed');
     }
 
@@ -141,15 +141,13 @@ export const loginWithCustomIdp = async (
         code,
         redirect_uri: env.CUSTOM_IDP_REDIRECT_URI,
         code_verifier: codeVerifier
-      },
-      {
-        headers: { 'Content-Type': 'application/json' }
       }
     );
 
     tokenResponse = response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError) {
+      console.error('Custom IdP Token Error:', error.response?.data || error.message);
       throw new UnauthorizedError('Authentication failed');
     }
 
@@ -198,7 +196,7 @@ export const logoutSession = async (refreshToken?: string): Promise<void> => {
   }
 
   try {
-    const payload = verifyRefreshToken(refreshToken);
+    const payload = verifyRefreshToken(refreshToken, { ignoreExpiration: true });
     await invalidateRefreshSession(payload.userId);
   } catch {
     return;

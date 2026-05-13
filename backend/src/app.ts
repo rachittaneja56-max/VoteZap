@@ -7,6 +7,7 @@ import globalErrorHandler from './middleware/errorMiddleware';
 import { NotFoundError } from './utils/AppError';
 import { sendSuccess } from './utils/ResponseHandler';
 import authRoutes from './modules/auth/auth.routes';
+import pollRoutes from './modules/polls/poll.routes'
 
 const app: Application = express();
 
@@ -20,6 +21,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/polls', pollRoutes);
 
 
 app.use((req: Request, res: Response, next) => {

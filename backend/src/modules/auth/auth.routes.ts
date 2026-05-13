@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { asyncHandler } from '../../utils/asyncHandler';
 import { customIdpLogin, getMe, googleLogin, logout, refresh } from './auth.controller';
 import { requireAuth } from './auth.middleware';
 
@@ -23,10 +22,10 @@ const loginLimiter = createAuthLimiter(10, 'Too many authentication attempts. Tr
 const refreshLimiter = createAuthLimiter(60, 'Too many refresh attempts. Try again later.');
 const logoutLimiter = createAuthLimiter(30, 'Too many logout attempts. Try again later.');
 
-router.post('/google', loginLimiter, asyncHandler(googleLogin));
-router.post('/custom-idp', loginLimiter, asyncHandler(customIdpLogin));
-router.post('/refresh', refreshLimiter, asyncHandler(refresh));
-router.post('/logout', logoutLimiter, asyncHandler(logout));
-router.get('/me', requireAuth, asyncHandler(getMe));
+router.post('/google', loginLimiter, googleLogin);
+router.post('/custom-idp', loginLimiter, customIdpLogin);
+router.post('/refresh', refreshLimiter, refresh);
+router.post('/logout', logoutLimiter, logout);
+router.get('/me', requireAuth, getMe);
 
 export default router;
