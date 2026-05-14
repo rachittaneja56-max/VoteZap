@@ -33,7 +33,7 @@ export interface AuthTokens {
 const cookieOptions = (maxAge: number): CookieOptions => ({
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'strict',
   path: '/',
   maxAge
 });

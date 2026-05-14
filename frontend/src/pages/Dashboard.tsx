@@ -14,11 +14,10 @@ import {
   Rocket
 } from 'lucide-react'
 import { LineChart, Line, ResponsiveContainer } from 'recharts'
-import { apiFetch, parseJsonResponse, ApiError } from '../lib/api'
+import { apiFetch, parseJsonResponse, ApiError, pollShareUrl } from '../lib/api'
 import type { PollListRow } from '../types/poll'
 import CreatePollModal from '../components/CreatePollModal'
 import SessionBadge from '../components/SessionBadge'
-import { useAuth } from '../lib/auth-context'
 
 function rowStatus(p: PollListRow): 'Active' | 'Expired' | 'Published' {
   if (p.isPublished) return 'Published'
@@ -27,7 +26,6 @@ function rowStatus(p: PollListRow): 'Active' | 'Expired' | 'Published' {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth()
   const navigate = useNavigate()
   const [polls, setPolls] = useState<PollListRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -267,11 +265,10 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => setFilter(tab)}
                 disabled={isLoading}
-                className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${
-                  filter === tab
-                    ? 'bg-[#F8FAFC] text-slate-900 ring-1 ring-slate-200'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                } disabled:opacity-50`}
+                className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${filter === tab
+                  ? 'bg-[#F8FAFC] text-slate-900 ring-1 ring-slate-200'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  } disabled:opacity-50`}
               >
                 {tab}
               </button>
@@ -311,13 +308,12 @@ export default function Dashboard() {
                         <td className="whitespace-nowrap px-4 py-3">
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
                             <span
-                              className={`size-1.5 shrink-0 rounded-full ${
-                                status === 'Active'
-                                  ? 'bg-emerald-500'
-                                  : status === 'Published'
-                                    ? 'bg-blue-500'
-                                    : 'bg-slate-400'
-                              }`}
+                              className={`size-1.5 shrink-0 rounded-full ${status === 'Active'
+                                ? 'bg-emerald-500'
+                                : status === 'Published'
+                                  ? 'bg-blue-500'
+                                  : 'bg-slate-400'
+                                }`}
                             />
                             {status}
                           </span>
