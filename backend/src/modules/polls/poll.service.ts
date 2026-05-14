@@ -187,22 +187,27 @@ export const publishPoll = async (pollId: string, userId: string) => {
         throw new ForbiddenError('You are not authorized to publish this poll');
     }
     if (poll.isPublished) {
-        return resultModel.findOne({ pollId });
+        return await resultModel.findOne({ pollId });
     }
 
     const { totalResponses, results } = await getPollAnalytics(pollId, userId);
 
-    const publishedResult = new resultModel({
-        pollId,
-        title: poll.title,
-        totalResponses,
-        results
-    });
+    const publishedResult = await resultModel.findOneAndUpdate(
+        { pollId: new mongoose.Types.ObjectId(pollId) },
+        {
+            pollId: new mongoose.Types.ObjectId(pollId),
+            title: poll.title,
+            totalResponses,
+            results,
+            publishedAt: new Date()
+        },
+        { upsert: true, new: true, runValidators: true }
+    );
 
-    await publishedResult.save();
-
-    poll.isPublished = true;
-    await poll.save();
+    await pollModel.updateOne(
+        { _id: new mongoose.Types.ObjectId(pollId) },
+        { isPublished: true }
+    );
 
     return publishedResult;
 };

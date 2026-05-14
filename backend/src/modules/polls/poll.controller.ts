@@ -79,6 +79,7 @@ export const publish = async (req: AuthenticatedRequest, res: Response) => {
             data: publishedResult
         });
     } catch (error) {
+        console.error(`[Publish Error] Poll ID: ${req.params.id}, User ID: ${req.user?.userId}`, error);
         throw error;
     }
 }
