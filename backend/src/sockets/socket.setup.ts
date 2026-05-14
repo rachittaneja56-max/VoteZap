@@ -6,15 +6,13 @@ let io: SocketIOServer;
 export const initSocket = (server: HTTPServer): SocketIOServer => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: '*', // Adjust to your frontend origin in production
+      origin: '*', // note: Adjust to frontend origin in production
       methods: ['GET', 'POST']
     }
   });
 
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
-
-    // Clients join a specific room for a poll
     socket.on('join-poll-room', (pollId: string) => {
       socket.join(pollId);
       console.log(`Socket ${socket.id} joined room: ${pollId}`);

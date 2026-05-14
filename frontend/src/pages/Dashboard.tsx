@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Copy, BarChart2, Activity, CheckCircle, Users, FileText } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  Plus,
+  Search,
+  Copy,
+  BarChart,
+  Activity,
+  CheckCircle,
+  Users,
+  FileText
+} from 'lucide-react'
+import { LineChart, Line, ResponsiveContainer } from 'recharts'
 
 const mockActivityData = [
   { name: 'Day 1', votes: 120 },
@@ -10,8 +19,8 @@ const mockActivityData = [
   { name: 'Day 4', votes: 290 },
   { name: 'Day 5', votes: 250 },
   { name: 'Day 6', votes: 340 },
-  { name: 'Day 7', votes: 420 },
-];
+  { name: 'Day 7', votes: 420 }
+]
 
 const mockPolls = [
   {
@@ -20,7 +29,7 @@ const mockPolls = [
     status: 'Active',
     responses: 1452,
     leadingOption: 'React (45%)',
-    createdAt: 'Oct 24, 2026',
+    createdAt: 'Oct 24, 2026'
   },
   {
     id: '2',
@@ -28,7 +37,7 @@ const mockPolls = [
     status: 'Expired',
     responses: 310,
     leadingOption: 'Very Satisfied (68%)',
-    createdAt: 'Sep 12, 2026',
+    createdAt: 'Sep 12, 2026'
   },
   {
     id: '3',
@@ -36,7 +45,7 @@ const mockPolls = [
     status: 'Active',
     responses: 89,
     leadingOption: 'New York (52%)',
-    createdAt: 'Oct 26, 2026',
+    createdAt: 'Oct 26, 2026'
   },
   {
     id: '4',
@@ -44,7 +53,7 @@ const mockPolls = [
     status: 'Active',
     responses: 2450,
     leadingOption: 'AI Features (38%)',
-    createdAt: 'Oct 20, 2026',
+    createdAt: 'Oct 20, 2026'
   },
   {
     id: '5',
@@ -52,91 +61,107 @@ const mockPolls = [
     status: 'Expired',
     responses: 421,
     leadingOption: '80s Retro (41%)',
-    createdAt: 'Aug 05, 2026',
-  },
-];
+    createdAt: 'Aug 05, 2026'
+  }
+]
+
+function pollShareUrl(pollId: string): string {
+  const base = import.meta.env.VITE_APP_URL?.replace(/\/$/, '') || window.location.origin
+  return `${base}/p/${pollId}`
+}
 
 export default function Dashboard() {
-  const [filter, setFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const filteredPolls = mockPolls.filter((poll) => {
-    const matchesFilter = filter === 'All' || poll.status === filter;
-    const matchesSearch = poll.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+    const matchesFilter = filter === 'All' || poll.status === filter
+    const matchesSearch = poll.name.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesFilter && matchesSearch
+  })
+
+  const handleCopyLink = async (pollId: string) => {
+    const url = pollShareUrl(pollId)
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedId(pollId)
+      window.setTimeout(() => setCopiedId((id) => (id === pollId ? null : id)), 2000)
+    } catch {
+      setCopiedId(null)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Overview</h1>
-            <p className="text-sm text-slate-500 mt-1">Welcome back, Creator. Here's what's happening today.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Welcome back, Creator. Here&apos;s what&apos;s happening today.
+            </p>
           </div>
           <Link
             to="/create"
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm text-sm"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4 shrink-0" aria-hidden />
             Create New Poll
           </Link>
         </div>
 
-        {/* Mini Analysis Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Card 1 */}
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-slate-500">Total Polls Created</span>
-              <FileText className="w-4 h-4 text-slate-400" />
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Total Polls
+              </span>
+              <FileText className="size-4 text-slate-400" aria-hidden />
             </div>
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-bold text-slate-900">12</span>
-            </div>
+            <span className="text-3xl font-bold tabular-nums text-slate-900">12</span>
           </div>
 
-          {/* Card 2 */}
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-slate-500">Total Responses</span>
-              <Users className="w-4 h-4 text-slate-400" />
+          <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Total Responses
+              </span>
+              <Users className="size-4 text-slate-400" aria-hidden />
             </div>
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-slate-900">4,521</span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 mb-1">
+            <div className="flex flex-wrap items-end gap-3">
+              <span className="text-3xl font-bold tabular-nums text-slate-900">4,521</span>
+              <span className="mb-0.5 inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-600/15">
                 +12% this week
               </span>
             </div>
           </div>
 
-          {/* Card 3 */}
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-slate-500">Avg. Completion Rate</span>
-              <CheckCircle className="w-4 h-4 text-slate-400" />
+          <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Avg Completion
+              </span>
+              <CheckCircle className="size-4 text-slate-400" aria-hidden />
             </div>
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-bold text-slate-900">94%</span>
-            </div>
+            <span className="text-3xl font-bold tabular-nums text-slate-900">94%</span>
           </div>
 
-          {/* Card 4 */}
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-500">Activity Trend</span>
-              <Activity className="w-4 h-4 text-slate-400" />
+          <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Activity Trend
+              </span>
+              <Activity className="size-4 text-slate-400" aria-hidden />
             </div>
-            <div className="h-12 w-full mt-auto">
+            <div className="mt-auto h-12 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={mockActivityData}>
-                  <Line 
-                    type="monotone" 
-                    dataKey="votes" 
-                    stroke="#4f46e5" 
-                    strokeWidth={2} 
+                <LineChart data={mockActivityData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                  <Line
+                    type="monotone"
+                    dataKey="votes"
+                    stroke="#2563eb"
+                    strokeWidth={2}
                     dot={false}
                     isAnimationActive={false}
                   />
@@ -146,27 +171,30 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Controls Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div className="mb-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-xs sm:flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+              aria-hidden
+            />
             <input
-              type="text"
-              placeholder="Search polls..."
+              type="search"
+              placeholder="Search polls…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
-          <div className="flex bg-white rounded-lg border border-slate-200 p-1 w-full sm:w-auto">
+          <div className="flex w-full rounded-xl border border-slate-200 bg-white p-1 shadow-sm sm:w-auto">
             {['All', 'Active', 'Expired'].map((tab) => (
               <button
                 key={tab}
+                type="button"
                 onClick={() => setFilter(tab)}
-                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors sm:flex-none ${
                   filter === tab
-                    ? 'bg-slate-100 text-slate-900'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                    ? 'bg-[#F8FAFC] text-slate-900 ring-1 ring-slate-200/80'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`}
               >
                 {tab}
@@ -175,66 +203,69 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Dense Poll Overview Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500">
+            <table className="w-full min-w-[880px] border-collapse text-left text-sm">
+              <thead className="border-b border-slate-200 bg-[#F8FAFC] text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-6 py-4 font-medium">Poll Name</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Responses</th>
-                  <th className="px-6 py-4 font-medium">Leading Option</th>
-                  <th className="px-6 py-4 font-medium">Created Date</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Poll Name</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Status</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right font-semibold">Responses</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Leading Option</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Created Date</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredPolls.length > 0 ? (
                   filteredPolls.map((poll) => (
-                    <tr key={poll.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-6 py-4">
+                    <tr key={poll.id} className="transition-colors hover:bg-slate-50/80">
+                      <td className="max-w-[220px] truncate px-4 py-3">
                         <span className="font-semibold text-slate-900">{poll.name}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="inline-flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1 rounded-full">
-                          <span 
-                            className={`w-2 h-2 rounded-full ${poll.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'}`} 
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
+                          <span
+                            className={`size-1.5 shrink-0 rounded-full ${
+                              poll.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'
+                            }`}
                           />
-                          <span className="text-xs font-medium text-slate-700">{poll.status}</span>
-                        </div>
+                          {poll.status}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="text-slate-700 font-medium">{poll.responses.toLocaleString()}</span>
+                      <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums font-medium text-slate-800">
+                        {poll.responses.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 text-slate-600">
-                        {poll.leadingOption}
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 text-sm">
-                        {poll.createdAt}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-3 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-                            title="Copy Link"
+                      <td className="max-w-[200px] truncate px-4 py-3 text-slate-600">{poll.leadingOption}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-500">{poll.createdAt}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            title="Copy poll link"
+                            onClick={() => void handleCopyLink(poll.id)}
+                            className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="size-4" aria-hidden />
+                            <span className="sr-only">Copy link</span>
                           </button>
                           <Link
                             to={`/analytics/${poll.id}`}
-                            className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-medium text-sm px-2 py-1.5 hover:bg-indigo-50 rounded-md transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 ring-1 ring-blue-600/15 transition-colors hover:bg-blue-100 hover:text-blue-800"
                           >
-                            <BarChart2 className="w-4 h-4" />
+                            <BarChart className="size-4 shrink-0" aria-hidden />
                             Analytics
                           </Link>
                         </div>
+                        {copiedId === poll.id && (
+                          <span className="mt-1 block text-[11px] font-medium text-emerald-600">Copied</span>
+                        )}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={6} className="px-4 py-14 text-center text-sm text-slate-500">
                       No polls found matching your criteria.
                     </td>
                   </tr>
@@ -243,8 +274,7 @@ export default function Dashboard() {
             </table>
           </div>
         </div>
-
       </div>
     </div>
-  );
+  )
 }

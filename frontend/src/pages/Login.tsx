@@ -14,7 +14,7 @@ function loadGsiScript(): Promise<void> {
   if (window.google?.accounts?.id) {
     return Promise.resolve()
   }
-  
+
   const existingScript = document.querySelector(`script[src="${GSI_SCRIPT}"]`) as HTMLScriptElement
   if (existingScript) {
     return new Promise((resolve, reject) => {
@@ -134,7 +134,6 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 selection:bg-slate-200">
-      {/* Top Navigation */}
       <div className="p-6">
         <Link
           to="/"
@@ -145,10 +144,9 @@ export default function Login() {
         </Link>
       </div>
 
-      {/* Main Content Centered */}
       <div className="flex flex-1 flex-col items-center justify-center px-4 pb-20 sm:px-6">
         <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10">
-          
+
           <div className="mb-10 text-center flex flex-col items-center">
             <div className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100/50 drop-shadow-sm">
               <ZapIcon className="size-8 text-[#ff6b35]" />
@@ -170,7 +168,6 @@ export default function Login() {
               />
             </div>
 
-            {/* RachitsAuth Button */}
             <button
               type="button"
               onClick={() => void startRachitsAuth()}

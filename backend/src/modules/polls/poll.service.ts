@@ -44,8 +44,6 @@ export const getPollAnalytics = async (pollId: string, userId: string) => {
     }
 
     const totalResponses = await responseModel.countDocuments({ pollId });
-
-    // Aggregate answers from responses to count options
     const analytics = await responseModel.aggregate([
         { $match: { pollId: new mongoose.Types.ObjectId(pollId) } },
         { $unwind: "$answers" },
@@ -60,11 +58,8 @@ export const getPollAnalytics = async (pollId: string, userId: string) => {
         }
     ]);
 
-    // Build the results object mapping from poll definition
     const results = poll.questions.map(question => {
         const qId = (question as any)._id?.toString() as string;
-
-        // Find total votes for this specific question to calculate percentages
         const questionTotalVotes = analytics
             .filter(a => a._id.questionId.toString() === qId)
             .reduce((sum, a) => sum + a.count, 0);

@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { 
-  Zap, 
-  Share2, 
-  BarChart3, 
-  Shield, 
-  BrainCircuit, 
-  Clock, 
+import {
+  Zap,
+  Share2,
+  BarChart3,
+  Shield,
+  BrainCircuit,
+  Clock,
   ListChecks,
-  Check, 
-  Copy, 
+  Check,
+  Copy,
   Link2,
   TrendingUp,
   MessageSquare
@@ -80,6 +80,7 @@ const features = [
   }
 ]
 
+
 const trendData = [
   { time: '08:00', responses: 12 },
   { time: '10:00', responses: 45 },
@@ -108,16 +109,6 @@ export default function Home() {
     }
   }
 
-  // Check for saved user data
-  const userStr = localStorage.getItem('user')
-  const userObj = userStr ? JSON.parse(userStr) : null
-  const userEmail = userObj?.user?.email
-
-  const handleLogout = () => {
-    localStorage.removeItem('user')
-    window.location.reload()
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-slate-200">
       {/* Navbar */}
@@ -131,34 +122,16 @@ export default function Home() {
             <a href="#how-it-works" className="transition-colors hover:text-slate-900">How it Works</a>
             <a href="#analytics" className="transition-colors hover:text-slate-900">Analytics</a>
           </nav>
-          
-          <div className="flex items-center gap-4">
-            {userEmail ? (
-              <div className="flex items-center gap-3">
-                <span className="hidden md:inline-block text-sm font-medium text-slate-600">
-                  {userEmail}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="rounded-full bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md active:scale-95"
-              >
-                Login / Start Building
-              </Link>
-            )}
-          </div>
+          <Link
+            to="/login"
+            className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md active:scale-95"
+          >
+            Login / Start Building
+          </Link>
         </div>
       </header>
 
       <main>
-        {/* Hero Section */}
         <section className="bg-white">
           <div className="mx-auto flex max-w-7xl flex-col gap-12 px-6 py-20 lg:flex-row lg:items-center lg:gap-16 lg:py-32">
             <div className="flex-1 space-y-8 lg:w-1/2">
@@ -203,17 +176,15 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setHeroSelection(opt.id)}
-                        className={`flex w-full items-center justify-between rounded-xl border-2 px-5 py-4 text-left font-medium transition-all ${
-                          heroSelection === opt.id
-                            ? 'border-slate-900 bg-slate-50 text-slate-900 shadow-sm'
-                            : 'border-slate-100 bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50'
-                        }`}
+                        className={`flex w-full items-center justify-between rounded-xl border-2 px-5 py-4 text-left font-medium transition-all ${heroSelection === opt.id
+                          ? 'border-slate-900 bg-slate-50 text-slate-900 shadow-sm'
+                          : 'border-slate-100 bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50'
+                          }`}
                       >
                         <span className="text-base">{opt.label}</span>
                         <span
-                          className={`flex size-5 items-center justify-center rounded-full border-2 transition-colors ${
-                            heroSelection === opt.id ? 'border-slate-900 bg-slate-900' : 'border-slate-300'
-                          }`}
+                          className={`flex size-5 items-center justify-center rounded-full border-2 transition-colors ${heroSelection === opt.id ? 'border-slate-900 bg-slate-900' : 'border-slate-300'
+                            }`}
                         >
                           {heroSelection === opt.id && <span className="size-2 rounded-full bg-white" />}
                         </span>
@@ -232,7 +203,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Grid Section */}
         <section id="features" className="border-t border-slate-200 bg-slate-50 py-24">
           <div className="mx-auto max-w-7xl px-6">
             <div className="mb-16 max-w-2xl">
@@ -253,7 +223,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Interactive Steps Section */}
         <section id="how-it-works" className="border-t border-slate-200 bg-white py-24">
           <div className="mx-auto max-w-7xl px-6">
             <div className="mb-16">
@@ -270,16 +239,14 @@ export default function Home() {
                       key={step.id}
                       type="button"
                       onClick={() => setActiveStep(step.id)}
-                      className={`flex w-full gap-5 rounded-3xl border-2 p-6 text-left transition-all ${
-                        selected
-                          ? 'border-slate-900 bg-white shadow-xl shadow-slate-200/50 scale-[1.02]'
-                          : 'border-transparent bg-slate-50 hover:bg-slate-100'
-                      }`}
+                      className={`flex w-full gap-5 rounded-3xl border-2 p-6 text-left transition-all ${selected
+                        ? 'border-slate-900 bg-white shadow-xl shadow-slate-200/50 scale-[1.02]'
+                        : 'border-transparent bg-slate-50 hover:bg-slate-100'
+                        }`}
                     >
                       <div
-                        className={`flex size-12 shrink-0 items-center justify-center rounded-2xl transition-colors ${
-                          selected ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 shadow-sm'
-                        }`}
+                        className={`flex size-12 shrink-0 items-center justify-center rounded-2xl transition-colors ${selected ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 shadow-sm'
+                          }`}
                       >
                         <Icon className="size-6" />
                       </div>
@@ -296,7 +263,7 @@ export default function Home() {
               <div className="flex-1 lg:w-1/2">
                 <div className="h-full min-h-[400px] rounded-3xl border border-slate-200 bg-slate-50 p-8 shadow-inner relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200" />
-                  
+
                   {activeStep === 1 && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
                       <div className="flex items-center gap-3 text-base font-bold text-slate-900 border-b border-slate-200 pb-4">
@@ -347,23 +314,21 @@ export default function Home() {
                           role="switch"
                           aria-checked={anonymousVoting}
                           onClick={() => setAnonymousVoting((v) => !v)}
-                          className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 ${
-                            anonymousVoting ? 'bg-slate-900' : 'bg-slate-300'
-                          }`}
+                          className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 ${anonymousVoting ? 'bg-slate-900' : 'bg-slate-300'
+                            }`}
                         >
                           <span
-                            className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              anonymousVoting ? 'translate-x-6' : 'translate-x-0'
-                            }`}
+                            className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${anonymousVoting ? 'translate-x-6' : 'translate-x-0'
+                              }`}
                           />
                         </button>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                         <p className="font-bold text-slate-900 mb-3">Poll Expiry</p>
-                         <div className="flex items-center gap-3 text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                           <Clock className="size-4 text-slate-400" />
-                           Closes automatically on <span className="font-bold text-slate-900">Feb 28, 6:00 PM</span>
-                         </div>
+                        <p className="font-bold text-slate-900 mb-3">Poll Expiry</p>
+                        <div className="flex items-center gap-3 text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <Clock className="size-4 text-slate-400" />
+                          Closes automatically on <span className="font-bold text-slate-900">Feb 28, 6:00 PM</span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -374,7 +339,7 @@ export default function Home() {
                         <div className="rounded-lg bg-white p-2 shadow-sm"><Share2 className="size-5 text-slate-900" /></div>
                         Share & Go Live
                       </div>
-                      
+
                       <div>
                         <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-slate-500">Public Link</label>
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -400,11 +365,11 @@ export default function Home() {
                         <div className="flex items-center justify-between mb-4">
                           <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Live Preview</p>
                           <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
-                             <span className="relative flex h-1.5 w-1.5">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75"></span>
-                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                              </span>
-                             Live
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75"></span>
+                              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                            </span>
+                            Live
                           </span>
                         </div>
                         <div className="flex-1 flex flex-col justify-center gap-4">
@@ -419,9 +384,9 @@ export default function Home() {
                                 <span className="font-bold text-slate-900">{item.pct}%</span>
                               </div>
                               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                                <div 
-                                  className="h-full bg-slate-900 rounded-full transition-all duration-1000 ease-out" 
-                                  style={{ width: `${item.pct}%` }} 
+                                <div
+                                  className="h-full bg-slate-900 rounded-full transition-all duration-1000 ease-out"
+                                  style={{ width: `${item.pct}%` }}
                                 />
                               </div>
                             </div>
@@ -436,7 +401,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Analytics Dashboard Mockup Section */}
         <section id="analytics" className="border-t border-slate-200 bg-slate-50 py-24 overflow-hidden">
           <div className="mx-auto max-w-7xl px-6">
             <div className="mb-16 text-center max-w-3xl mx-auto">
@@ -446,9 +410,7 @@ export default function Home() {
               </h2>
             </div>
 
-            {/* Browser Mockup */}
             <div className="rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50 overflow-hidden ring-1 ring-slate-900/5">
-              {/* Browser Header */}
               <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
                 <div className="flex gap-1.5">
                   <div className="size-3 rounded-full bg-rose-400" />
@@ -460,10 +422,8 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Dashboard Content */}
               <div className="p-6 md:p-8 bg-slate-50/50">
-                
-                {/* Stat Cards */}
+
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
                   {[
                     { label: 'Total Responses', value: '1,248', icon: TrendingUp },
@@ -481,9 +441,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* Main Grid */}
                 <div className="grid grid-cols-1 gap-6 mb-6">
-                  {/* Vote Distribution */}
                   <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-6">Question 1: Favorite JS Framework?</h3>
                     <div className="space-y-6">
@@ -507,9 +465,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Bottom Row */}
                 <div className="grid lg:grid-cols-3 gap-6">
-                  {/* Trend Chart */}
                   <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-6">Response Trend (Today)</h3>
                     <div className="h-[200px] w-full">
@@ -518,7 +474,7 @@ export default function Home() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                           <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                          <Tooltip 
+                          <Tooltip
                             cursor={{ fill: '#f8fafc' }}
                             contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                           />
@@ -528,27 +484,26 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Feedback List */}
                   <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center justify-between">
                       Recent Feedback
                       <MessageSquare className="size-4 text-slate-400" />
                     </h3>
                     <div className="space-y-4 flex-1 overflow-hidden">
-                       {[
-                         { user: 'Anonymous', time: '2m ago', text: 'Love the new dark mode concept!' },
-                         { user: 'Sarah T.', time: '15m ago', text: 'CSV export would save me hours.' },
-                         { user: 'Anonymous', time: '1h ago', text: 'Webhooks are essential for our workflow.' },
-                         { user: 'Mike R.', time: '2h ago', text: 'Keep it simple, focus on speed.' }
-                       ].map((fb, i) => (
-                         <div key={i} className="text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0">
-                           <div className="flex justify-between text-xs text-slate-400 mb-1">
-                             <span className="font-semibold text-slate-600">{fb.user}</span>
-                             <span>{fb.time}</span>
-                           </div>
-                           <p className="text-slate-700">{fb.text}</p>
-                         </div>
-                       ))}
+                      {[
+                        { user: 'Anonymous', time: '2m ago', text: 'Love the new dark mode concept!' },
+                        { user: 'Sarah T.', time: '15m ago', text: 'CSV export would save me hours.' },
+                        { user: 'Anonymous', time: '1h ago', text: 'Webhooks are essential for our workflow.' },
+                        { user: 'Mike R.', time: '2h ago', text: 'Keep it simple, focus on speed.' }
+                      ].map((fb, i) => (
+                        <div key={i} className="text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                          <div className="flex justify-between text-xs text-slate-400 mb-1">
+                            <span className="font-semibold text-slate-600">{fb.user}</span>
+                            <span>{fb.time}</span>
+                          </div>
+                          <p className="text-slate-700">{fb.text}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -560,7 +515,6 @@ export default function Home() {
 
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-12">
         <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
           <div className="flex items-center gap-2 font-bold text-slate-900">

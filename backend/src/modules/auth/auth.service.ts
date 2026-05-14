@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env';
@@ -16,15 +16,13 @@ import User, { type UserDocument } from './user.model';
 
 interface CustomIdpTokenResponse {
   access_token: string;
-  id_token?: string;
-  refresh_token?: string;
+  id_token: string;
+  refresh_token: string;
 }
 
 interface DecodedIdToken {
   email?: unknown;
-  user?: unknown;
   sub?: unknown;
-  id?: unknown;
 }
 
 interface AuthSession {
@@ -35,23 +33,6 @@ interface AuthSession {
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
-const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
-
-const getStringClaim = (value: unknown, keys: string[]): string | undefined => {
-  if (!value || typeof value !== 'object') {
-    return undefined;
-  }
-
-  const record = value as Record<string, unknown>;
-  for (const key of keys) {
-    const claim = record[key];
-    if (typeof claim === 'string' && claim.trim()) {
-      return claim;
-    }
-  }
-
-  return undefined;
-};
 
 const linkOrCreateUser = async (
   email: string,
@@ -132,34 +113,30 @@ export const loginWithCustomIdp = async (
   codeVerifier: string
 ): Promise<AuthSession> => {
   let tokenResponse: CustomIdpTokenResponse;
-  const idpBaseUrl = trimTrailingSlash(env.CUSTOM_IDP_URL);
-  const tokenUrl = `${idpBaseUrl}/api/auth/token`;
-  const userInfoUrl = `${idpBaseUrl}/api/auth/userinfo`;
 
   try {
-    const tokenBody = {
-      client_id: env.CUSTOM_IDP_CLIENT_ID,
-      client_secret: env.CUSTOM_IDP_CLIENT_SECRET,
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: env.CUSTOM_IDP_REDIRECT_URI,
-      code_verifier: codeVerifier
-    };
-
-    const response = await axios.post<CustomIdpTokenResponse>(tokenUrl, tokenBody, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
+    const response = await axios.post<CustomIdpTokenResponse>(
+      `${env.CUSTOM_IDP_URL}/api/auth/token`,
+      {
+        client_id: env.CUSTOM_IDP_CLIENT_ID,
+        client_secret: env.CUSTOM_IDP_CLIENT_SECRET,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: env.CUSTOM_IDP_REDIRECT_URI,
+        code_verifier: codeVerifier
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       }
-    });
+    );
 
     tokenResponse = response.data;
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
+    if (error instanceof AxiosError) {
       const errData = error.response?.data || error.message;
-      throw new UnauthorizedError(
-        `Token exchange failed: ${typeof errData === 'string' ? errData : JSON.stringify(errData)}`
-      );
+      throw new UnauthorizedError(`Token Exchange Error: ${JSON.stringify(errData)}`);
     }
 
     throw error;
@@ -169,15 +146,14 @@ export const loginWithCustomIdp = async (
   let sub: string | undefined;
 
   try {
-    const userInfoResponse = await axios.get(userInfoUrl, {
+    const userInfoResponse = await axios.get(`${env.CUSTOM_IDP_URL}/api/auth/userinfo`, {
       headers: {
-        Accept: 'application/json',
         Authorization: `Bearer ${tokenResponse.access_token}`
       }
     });
-    
-    email = getStringClaim(userInfoResponse.data, ['email']);
-    sub = getStringClaim(userInfoResponse.data, ['sub', 'id', 'userId', '_id']);
+
+    email = userInfoResponse.data?.email;
+    sub = userInfoResponse.data?.sub;
   } catch (err) {
     console.warn('Custom IdP UserInfo Error, falling back to id_token:', err);
   }
@@ -185,12 +161,11 @@ export const loginWithCustomIdp = async (
   if ((!email || !sub) && tokenResponse.id_token) {
     const decoded = jwt.decode(tokenResponse.id_token) as DecodedIdToken | null;
     if (decoded) {
-      email = email ?? getStringClaim(decoded, ['email']);
-      sub = sub ?? getStringClaim(decoded, ['sub', 'id']);
-
-      if (!email || !sub) {
-        email = email ?? getStringClaim(decoded.user, ['email']);
-        sub = sub ?? getStringClaim(decoded.user, ['sub', 'id', 'userId', '_id']);
+      if (!email && typeof decoded.email === 'string') {
+        email = decoded.email;
+      }
+      if (!sub && typeof decoded.sub === 'string') {
+        sub = decoded.sub;
       }
     }
   }

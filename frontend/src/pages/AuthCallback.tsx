@@ -4,8 +4,6 @@ import { Loader2 } from 'lucide-react'
 import { apiFetch, parseJsonResponse } from '../lib/api'
 import { clearPkceSession, readPkceSession } from '../lib/pkce'
 
-// React Strict Mode runs effects twice in dev. OAuth codes are single-use, so a second
-// POST causes invalid_grant. Share one in-flight exchange per code across effect runs.
 const customIdpExchangeByCode = new Map<string, Promise<unknown>>()
 
 function getOrStartCustomIdpExchange(code: string, codeVerifier: string): Promise<unknown> {
