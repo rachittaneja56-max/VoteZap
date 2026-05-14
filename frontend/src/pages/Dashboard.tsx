@@ -115,7 +115,9 @@ export default function Dashboard() {
 
   const handlePublish = async (pollId: string) => {
     try {
-      await apiFetch(`/polls/${pollId}/publish`, { method: 'POST' })
+      await parseJsonResponse(
+         await apiFetch(`/polls/${pollId}/publish`, { method: 'POST' })
+        )
       void fetchPolls()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Publish failed')
