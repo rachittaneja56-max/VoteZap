@@ -1,4 +1,4 @@
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { type AuthenticatedRequest } from "../auth/auth.middleware";
 import * as pollService from "./poll.service"
 import { UnauthorizedError } from "../../utils/AppError";
@@ -31,4 +31,57 @@ export const getPollById = async (req: AuthenticatedRequest, res: Response) => {
             poll
         }
     });
+}
+
+export const getAnalytics = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        const userId = req.user?.userId || (req.user as any)?.id;
+        if (!userId) {
+            throw new UnauthorizedError('User ID missing from token');
+        }
+
+        const analytics = await pollService.getPollAnalytics(id, userId);
+
+        res.status(200).json({
+            status: 'success',
+            data: analytics
+        });
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const publish = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        const userId = req.user?.userId || (req.user as any)?.id;
+        if (!userId) {
+            throw new UnauthorizedError('User ID missing from token');
+        }
+
+        const publishedResult = await pollService.publishPoll(id, userId);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Poll published successfully',
+            data: publishedResult
+        });
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const getResults = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        const results = await pollService.getPublishedResults(id);
+
+        res.status(200).json({
+            status: 'success',
+            data: results
+        });
+    } catch (error) {
+        throw error;
+    }
 }
