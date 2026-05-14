@@ -22,31 +22,33 @@ function PublishedResultsView({ result }: { result: PublishedResult }) {
         </div>
 
         <div className="mt-6 space-y-6">
-          {result.results.map((question) => (
-            <section key={question.questionId} className="rounded-xl border border-slate-200 p-4">
-              <h2 className="text-sm font-semibold tracking-tight text-slate-900">
-                {question.questionText}
-              </h2>
-              <ul className="mt-4 space-y-3">
-                {question.options.map((option) => (
-                  <li key={option.optionId}>
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="truncate font-medium text-slate-700">{option.optionText}</span>
-                      <span className="shrink-0 tabular-nums text-slate-500">
-                        {option.voteCount} ({option.percentage}%)
-                      </span>
-                    </div>
-                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-blue-600"
-                        style={{ width: `${Math.min(100, option.percentage)}%` }}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          {result.results.map((q) => {
+            return (
+              <div key={q.questionId} className="rounded-xl border border-slate-200 p-4">
+                <h2 className="text-sm font-semibold tracking-tight text-slate-900">
+                  {q.questionText}
+                </h2>
+                <ul className="mt-4 space-y-3">
+                  {q.options.map((option) => (
+                    <li key={option.optionId}>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="truncate font-medium text-slate-700">{option.optionText}</span>
+                        <span className="shrink-0 tabular-nums text-slate-500">
+                          {option.voteCount} ({option.percentage}%)
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full rounded-full bg-blue-600"
+                          style={{ width: `${Math.min(100, option.percentage)}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          })}
         </div>
 
         <Link
