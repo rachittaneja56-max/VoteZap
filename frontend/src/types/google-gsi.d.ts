@@ -9,6 +9,8 @@ declare global {
             client_id: string
             callback: (response: { credential: string }) => void
             auto_select?: boolean
+            ux_mode?: 'popup' | 'redirect'
+            login_uri?: string
           }) => void
           renderButton: (
             parent: HTMLElement,
@@ -17,7 +19,7 @@ declare global {
               theme?: string
               size?: string
               text?: string
-              width?: string | number
+              width?: number
               locale?: string
             }
           ) => void

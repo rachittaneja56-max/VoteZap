@@ -12,7 +12,13 @@ import responseRoutes from './modules/responses/response.routes';
 
 const app: Application = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: {
+      policy: 'same-origin-allow-popups'
+    }
+  })
+);
 app.use(cors({
   origin: [env.CLIENT_URL, 'http://localhost:5173'],
   credentials: true,

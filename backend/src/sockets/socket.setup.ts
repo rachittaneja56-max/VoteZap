@@ -6,17 +6,23 @@ let io: SocketIOServer;
 export const initSocket = (server: HTTPServer): SocketIOServer => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: '*', // note: Adjust to frontend origin in production
+      origin: '*',
       methods: ['GET', 'POST']
     }
   });
 
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
-    socket.on('join-poll-room', (pollId: string) => {
-      socket.join(pollId);
+    const joinPollRoom = (pollId: string) => {
+      if (!pollId || typeof pollId !== 'string') {
+        return;
+      }
+      void socket.join(pollId);
       console.log(`Socket ${socket.id} joined room: ${pollId}`);
-    });
+    };
+
+    socket.on('join-poll-room', joinPollRoom);
+    socket.on('joinRoom', joinPollRoom);
 
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
@@ -32,4 +38,5 @@ export const emitNewResponse = (pollId: string, responseData: any): void => {
     return;
   }
   io.to(pollId).emit('new-response', responseData);
+  io.to(pollId).emit('analyticsUpdate', responseData);
 };

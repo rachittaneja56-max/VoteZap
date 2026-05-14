@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { apiFetch, getStaticAuthConfig, parseJsonResponse } from '../lib/api'
 import {
@@ -7,6 +7,7 @@ import {
   sha256Base64Url,
   storePkceSession
 } from '../lib/pkce'
+import { useAuth } from '../lib/auth-context'
 
 const GSI_SCRIPT = 'https://accounts.google.com/gsi/client'
 
@@ -34,12 +35,25 @@ function loadGsiScript(): Promise<void> {
   })
 }
 
+function ZapIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { signIn, isAuthenticated, user } = useAuth()
   const googleBtnRef = useRef<HTMLDivElement>(null)
   const config = getStaticAuthConfig()
   const [oauthBusy, setOauthBusy] = useState(false)
   const [oauthError, setOauthError] = useState<string | null>(null)
+
+  const fromPath =
+    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard'
 
   useEffect(() => {
     if (!config.googleClientId || !googleBtnRef.current) return
@@ -64,8 +78,8 @@ export default function Login() {
                 body: JSON.stringify({ idToken: response.credential })
               })
               const data = await parseJsonResponse(res)
-              localStorage.setItem('user', JSON.stringify(data))
-              navigate('/', { replace: true })
+              signIn(data)
+              navigate(fromPath, { replace: true })
             } catch (e) {
               setOauthError(e instanceof Error ? e.message : 'Google sign-in failed')
             } finally {
@@ -79,7 +93,7 @@ export default function Login() {
           theme: 'outline',
           size: 'large',
           text: 'continue_with',
-          width: '100%'
+          width: Math.min(400, googleBtnRef.current.getBoundingClientRect().width || 320)
         })
       } catch (e) {
         if (!cancelled) {
@@ -94,7 +108,13 @@ export default function Login() {
       cancelled = true
       window.google?.accounts?.id?.cancel()
     }
-  }, [config.googleClientId, navigate])
+  }, [config.googleClientId, fromPath, navigate, signIn])
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate(fromPath, { replace: true })
+    }
+  }, [fromPath, isAuthenticated, navigate, user])
 
   const startRachitsAuth = async () => {
     setOauthError(null)
@@ -108,6 +128,7 @@ export default function Login() {
       const state = generateRandomString(32)
       const challenge = await sha256Base64Url(verifier)
       storePkceSession(verifier, state)
+      sessionStorage.setItem('authRedirectTo', fromPath)
 
       const base = config.customIdpUrl.replace(/\/$/, '')
       const url = new URL(`${base}/api/auth/authorize`)
@@ -125,12 +146,6 @@ export default function Login() {
       setOauthError(e instanceof Error ? e.message : 'Could not start login')
     }
   }
-
-  const ZapIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" clipRule="evenodd" />
-    </svg>
-  )
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 selection:bg-slate-200">

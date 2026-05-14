@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { apiFetch, parseJsonResponse } from '../lib/api'
 import { clearPkceSession, readPkceSession } from '../lib/pkce'
+import { useAuth } from '../lib/auth-context'
 
 const customIdpExchangeByCode = new Map<string, Promise<unknown>>()
 
@@ -29,60 +30,68 @@ function getOrStartCustomIdpExchange(code: string, codeVerifier: string): Promis
 
 export default function AuthCallback() {
   const navigate = useNavigate()
+  const { signIn } = useAuth()
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    const state = params.get('state')
-    const idpError = params.get('error')
-    const idpDesc = params.get('error_description')
-
-    if (idpError) {
-      setError(idpDesc || idpError || 'Sign-in was cancelled or failed.')
-      return
-    }
-
-    const session = readPkceSession()
-    if (!code || !state) {
-      setError('Missing authorization response. Return to login and try again.')
-      return
-    }
-    if (!session) {
-      setError('Your login session expired. Please start again from the login page.')
-      return
-    }
-    if (session.state !== state) {
-      setError('Security check failed (state mismatch). Please try again.')
-      clearPkceSession()
-      return
-    }
-
     let cancelled = false
-    setMessage('Completing sign-in...')
-    void getOrStartCustomIdpExchange(code, session.verifier)
-      .then((data) => {
-        if (cancelled) {
-          return
-        }
-        localStorage.setItem('user', JSON.stringify(data))
+
+    queueMicrotask(() => {
+      if (cancelled) return
+
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+      const state = params.get('state')
+      const idpError = params.get('error')
+      const idpDesc = params.get('error_description')
+
+      if (idpError) {
+        setError(idpDesc || idpError || 'Sign-in was cancelled or failed.')
+        return
+      }
+
+      const session = readPkceSession()
+      if (!code || !state) {
+        setError('Missing authorization response. Return to login and try again.')
+        return
+      }
+      if (!session) {
+        setError('Your login session expired. Please start again from the login page.')
+        return
+      }
+      if (session.state !== state) {
         clearPkceSession()
-        navigate('/', { replace: true })
-      })
-      .catch((e: unknown) => {
-        if (cancelled) {
-          return
-        }
-        clearPkceSession()
-        setMessage(null)
-        setError(e instanceof Error ? e.message : 'Sign-in failed')
-      })
+        setError('Security check failed (state mismatch). Please try again.')
+        return
+      }
+
+      setMessage('Completing sign-in...')
+      void getOrStartCustomIdpExchange(code, session.verifier)
+        .then((data) => {
+          if (cancelled) {
+            return
+          }
+          signIn(data)
+          clearPkceSession()
+          const redirectTo = sessionStorage.getItem('authRedirectTo') || '/dashboard'
+          sessionStorage.removeItem('authRedirectTo')
+          navigate(redirectTo, { replace: true })
+        })
+        .catch((e: unknown) => {
+          if (cancelled) {
+            return
+          }
+          clearPkceSession()
+          setMessage(null)
+          setError(e instanceof Error ? e.message : 'Sign-in failed')
+        })
+    })
 
     return () => {
       cancelled = true
     }
-  }, [navigate])
+  }, [navigate, signIn])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4">

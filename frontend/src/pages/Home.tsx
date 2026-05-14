@@ -23,6 +23,8 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts'
+import SessionBadge from '../components/SessionBadge'
+import { useAuth } from '../lib/auth-context'
 
 type Step = 1 | 2 | 3
 
@@ -91,6 +93,7 @@ const trendData = [
 ]
 
 export default function Home() {
+  const { isAuthenticated } = useAuth()
   const [activeStep, setActiveStep] = useState<Step>(1)
   const [anonymousVoting, setAnonymousVoting] = useState(true)
   const [heroSelection, setHeroSelection] = useState<string | null>('react')
@@ -111,7 +114,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-slate-200">
-      {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-slate-900">
@@ -122,12 +124,7 @@ export default function Home() {
             <a href="#how-it-works" className="transition-colors hover:text-slate-900">How it Works</a>
             <a href="#analytics" className="transition-colors hover:text-slate-900">Analytics</a>
           </nav>
-          <Link
-            to="/login"
-            className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md active:scale-95"
-          >
-            Login / Start Building
-          </Link>
+          <SessionBadge />
         </div>
       </header>
 
@@ -145,7 +142,8 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-4">
                 <Link
-                  to="/login"
+                  to="/dashboard"
+                  state={isAuthenticated ? undefined : { from: { pathname: '/dashboard' } }}
                   className="inline-flex items-center justify-center rounded-full bg-slate-900 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl active:translate-y-0"
                 >
                   Get started free

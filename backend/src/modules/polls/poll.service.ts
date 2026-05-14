@@ -1,7 +1,7 @@
 import pollModel from "./poll.model";
 import responseModel from "../responses/response.model";
 import resultModel from "./result.model";
-import { BadRequestError, NotFoundError, ForbiddenError, ConflictError } from "../../utils/AppError";
+import { BadRequestError, NotFoundError, ForbiddenError } from "../../utils/AppError";
 import mongoose from "mongoose";
 interface CreatePollPayload {
     title: string,
@@ -34,6 +34,67 @@ export const getPollByIdDb = async (pollId: string) => {
     return poll;
 }
 
+export interface PollListRow {
+    id: string;
+    title: string;
+    expiresAt: Date;
+    responseMode: 'ANONYMOUS' | 'AUTHENTICATED';
+    isPublished: boolean;
+    createdAt: Date;
+    responseCount: number;
+    leadingOption: string;
+    questionCount: number;
+}
+
+export const listPollsByCreator = async (creatorId: string): Promise<PollListRow[]> => {
+    const creatorOid = new mongoose.Types.ObjectId(creatorId);
+    const polls = await pollModel.find({ creatorId: creatorOid }).sort({ createdAt: -1 }).lean();
+
+    if (polls.length === 0) {
+        return [];
+    }
+
+    const pollIds = polls.map((p) => p._id);
+    const countAgg = await responseModel.aggregate<{ _id: mongoose.Types.ObjectId; count: number }>([
+        { $match: { pollId: { $in: pollIds } } },
+        { $group: { _id: '$pollId', count: { $sum: 1 } } }
+    ]);
+    const countMap = new Map(countAgg.map((row) => [String(row._id), row.count]));
+
+    const rows: PollListRow[] = [];
+    for (const p of polls) {
+        const id = String(p._id);
+        const responseCount = countMap.get(id) || 0;
+        let leadingOption = '—';
+        if (responseCount > 0) {
+            try {
+                const analytics = await getPollAnalytics(id, creatorId);
+                const first = analytics.results[0];
+                if (first?.options?.length) {
+                    const top = [...first.options].sort((a, b) => b.voteCount - a.voteCount)[0];
+                    if (top) {
+                        leadingOption = `${top.optionText} (${top.percentage}%)`;
+                    }
+                }
+            } catch {
+                leadingOption = '—';
+            }
+        }
+        rows.push({
+            id,
+            title: p.title,
+            expiresAt: p.expiresAt as Date,
+            responseMode: p.responseMode,
+            isPublished: p.isPublished,
+            createdAt: (p as { createdAt?: Date }).createdAt || new Date(),
+            responseCount,
+            leadingOption,
+            questionCount: Array.isArray(p.questions) ? p.questions.length : 0
+        });
+    }
+    return rows;
+};
+
 export const getPollAnalytics = async (pollId: string, userId: string) => {
     const poll = await pollModel.findById(pollId);
     if (!poll) {
@@ -44,19 +105,45 @@ export const getPollAnalytics = async (pollId: string, userId: string) => {
     }
 
     const totalResponses = await responseModel.countDocuments({ pollId });
-    const analytics = await responseModel.aggregate([
-        { $match: { pollId: new mongoose.Types.ObjectId(pollId) } },
-        { $unwind: "$answers" },
-        {
-            $group: {
-                _id: {
-                    questionId: "$answers.questionId",
-                    selectedOptionId: "$answers.selectedOptionId"
-                },
-                count: { $sum: 1 }
+
+    const [analytics, participationAgg, timeline] = await Promise.all([
+        responseModel.aggregate([
+            { $match: { pollId: new mongoose.Types.ObjectId(pollId) } },
+            { $unwind: "$answers" },
+            {
+                $group: {
+                    _id: {
+                        questionId: "$answers.questionId",
+                        selectedOptionId: "$answers.selectedOptionId"
+                    },
+                    count: { $sum: 1 }
+                }
             }
-        }
+        ]),
+        responseModel.aggregate([
+            { $match: { pollId: new mongoose.Types.ObjectId(pollId) } },
+            {
+                $group: {
+                    _id: null,
+                    anonymous: { $sum: { $cond: [{ $eq: ["$userId", null] }, 1, 0] } },
+                    authenticated: { $sum: { $cond: [{ $ne: ["$userId", null] }, 1, 0] } }
+                }
+            }
+        ]),
+        responseModel.aggregate([
+            { $match: { pollId: new mongoose.Types.ObjectId(pollId) } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$submittedAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } },
+            { $project: { date: "$_id", count: 1, _id: 0 } }
+        ])
     ]);
+
+    const participation = participationAgg[0] || { anonymous: 0, authenticated: 0 };
 
     const results = poll.questions.map(question => {
         const qId = (question as any)._id?.toString() as string;
@@ -88,7 +175,7 @@ export const getPollAnalytics = async (pollId: string, userId: string) => {
         };
     });
 
-    return { totalResponses, results };
+    return { totalResponses, results, participation, timeline };
 };
 
 export const publishPoll = async (pollId: string, userId: string) => {
