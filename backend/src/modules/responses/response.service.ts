@@ -12,7 +12,7 @@ interface IAnswerInput {
 
 export const submitResponse = async (pollId: string, userId: string | undefined, answers: IAnswerInput[]): Promise<IResponse> => {
   const poll = await Poll.findById(pollId);
-  
+
   if (!poll) {
     throw new NotFoundError('Poll not found');
   }
@@ -20,7 +20,6 @@ export const submitResponse = async (pollId: string, userId: string | undefined,
   if (poll.expiresAt < new Date()) {
     throw new ForbiddenError('Poll has expired');
   }
-
   if (poll.isPublished) {
     throw new ForbiddenError('Voting is closed as the results have already been published');
   }
@@ -29,24 +28,16 @@ export const submitResponse = async (pollId: string, userId: string | undefined,
     throw new UnauthorizedError('You must be logged in to participate in this poll');
   }
 
-  // Extract mandatory question IDs
   const mandatoryQuestionIds = poll.questions
     .filter(q => q.isMandatory)
     .map(q => (q as any)._id?.toString() as string);
-
-  // Extract provided answer question IDs
   const providedQuestionIds = answers.map(a => a.questionId);
 
-  // Find missing mandatory questions
   const missingQuestions = mandatoryQuestionIds.filter(id => id && !providedQuestionIds.includes(id));
-  
+
   if (missingQuestions.length > 0) {
     throw new BadRequestError('All mandatory questions must be answered');
   }
-
-  // Validate that the provided options actually exist in the questions
-  // (Optional but good practice, the prompt didn't strictly require it, 
-  // but it's safe. I'll just save it directly for now as requested).
 
   const newResponse = new ResponseModel({
     pollId,
@@ -55,8 +46,6 @@ export const submitResponse = async (pollId: string, userId: string | undefined,
   });
 
   await newResponse.save();
-
-  // Broadcast updated analytics to socket room
   const updatedAnalytics = await getPollAnalytics(pollId, poll.creatorId.toString());
   emitNewResponse(pollId, updatedAnalytics);
 

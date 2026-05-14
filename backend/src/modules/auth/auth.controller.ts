@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { env } from '../../config/env';
 import { UnauthorizedError } from '../../utils/AppError';
 import { sendSuccess } from '../../utils/ResponseHandler';
 import type { AuthenticatedRequest } from './auth.middleware';

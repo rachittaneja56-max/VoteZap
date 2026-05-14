@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env';
@@ -16,13 +16,15 @@ import User, { type UserDocument } from './user.model';
 
 interface CustomIdpTokenResponse {
   access_token: string;
-  id_token: string;
-  refresh_token: string;
+  id_token?: string;
+  refresh_token?: string;
 }
 
 interface DecodedIdToken {
   email?: unknown;
+  user?: unknown;
   sub?: unknown;
+  id?: unknown;
 }
 
 interface AuthSession {
@@ -33,6 +35,23 @@ interface AuthSession {
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
+
+const getStringClaim = (value: unknown, keys: string[]): string | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  for (const key of keys) {
+    const claim = record[key];
+    if (typeof claim === 'string' && claim.trim()) {
+      return claim;
+    }
+  }
+
+  return undefined;
+};
 
 const linkOrCreateUser = async (
   email: string,
@@ -60,24 +79,7 @@ const linkOrCreateUser = async (
   return user;
 };
 
-const decodeCustomIdToken = (idToken: string): { email: string; sub: string } => {
-  const decoded = jwt.decode(idToken);
 
-  if (!decoded || typeof decoded === 'string') {
-    throw new UnauthorizedError('Authentication failed');
-  }
-
-  const payload = decoded as DecodedIdToken;
-
-  if (typeof payload.email !== 'string' || typeof payload.sub !== 'string') {
-    throw new UnauthorizedError('Authentication failed');
-  }
-
-  return {
-    email: payload.email,
-    sub: payload.sub
-  };
-};
 
 const issueAuthSession = async (user: UserDocument): Promise<AuthSession> => {
   const tokens = {
@@ -130,36 +132,73 @@ export const loginWithCustomIdp = async (
   codeVerifier: string
 ): Promise<AuthSession> => {
   let tokenResponse: CustomIdpTokenResponse;
+  const idpBaseUrl = trimTrailingSlash(env.CUSTOM_IDP_URL);
+  const tokenUrl = `${idpBaseUrl}/api/auth/token`;
+  const userInfoUrl = `${idpBaseUrl}/api/auth/userinfo`;
 
   try {
-    const response = await axios.post<CustomIdpTokenResponse>(
-      `${env.CUSTOM_IDP_URL}/api/auth/token`,
-      new URLSearchParams({
-        client_id: env.CUSTOM_IDP_CLIENT_ID,
-        client_secret: env.CUSTOM_IDP_CLIENT_SECRET,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: env.CUSTOM_IDP_REDIRECT_URI,
-        code_verifier: codeVerifier
-      }).toString(),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+    const tokenBody = {
+      client_id: env.CUSTOM_IDP_CLIENT_ID,
+      client_secret: env.CUSTOM_IDP_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: env.CUSTOM_IDP_REDIRECT_URI,
+      code_verifier: codeVerifier
+    };
+
+    const response = await axios.post<CustomIdpTokenResponse>(tokenUrl, tokenBody, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
       }
-    );
+    });
 
     tokenResponse = response.data;
-  } catch (error: unknown) {
-    if (error instanceof AxiosError) {
-      console.error('Custom IdP Token Error:', error.response?.data || error.message);
-      throw new UnauthorizedError('Authentication failed');
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const errData = error.response?.data || error.message;
+      throw new UnauthorizedError(
+        `Token exchange failed: ${typeof errData === 'string' ? errData : JSON.stringify(errData)}`
+      );
     }
 
     throw error;
   }
 
-  const { email, sub } = decodeCustomIdToken(tokenResponse.id_token);
+  let email: string | undefined;
+  let sub: string | undefined;
+
+  try {
+    const userInfoResponse = await axios.get(userInfoUrl, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${tokenResponse.access_token}`
+      }
+    });
+    
+    email = getStringClaim(userInfoResponse.data, ['email']);
+    sub = getStringClaim(userInfoResponse.data, ['sub', 'id', 'userId', '_id']);
+  } catch (err) {
+    console.warn('Custom IdP UserInfo Error, falling back to id_token:', err);
+  }
+
+  if ((!email || !sub) && tokenResponse.id_token) {
+    const decoded = jwt.decode(tokenResponse.id_token) as DecodedIdToken | null;
+    if (decoded) {
+      email = email ?? getStringClaim(decoded, ['email']);
+      sub = sub ?? getStringClaim(decoded, ['sub', 'id']);
+
+      if (!email || !sub) {
+        email = email ?? getStringClaim(decoded.user, ['email']);
+        sub = sub ?? getStringClaim(decoded.user, ['sub', 'id', 'userId', '_id']);
+      }
+    }
+  }
+
+  if (!email || !sub) {
+    throw new UnauthorizedError('Authentication failed: Missing email or sub from IdP');
+  }
+
   const user = await linkOrCreateUser(email, 'customIdpId', sub);
   return issueAuthSession(user);
 };
