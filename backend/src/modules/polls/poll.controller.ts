@@ -4,7 +4,7 @@ import * as pollService from "./poll.service"
 import { UnauthorizedError } from "../../utils/AppError";
 
 export const createPoll = async (req: AuthenticatedRequest, res: Response) => {
-    const creatorId = req.user?.id || req.user?.customIdpId
+    const creatorId = req.user?.userId;
     if (!creatorId) {
         throw new UnauthorizedError('User ID missing from token', 'UNAUTHORIZED');
     }

@@ -21,6 +21,10 @@ export const submitResponse = async (pollId: string, userId: string | undefined,
     throw new ForbiddenError('Poll has expired');
   }
 
+  if (poll.isPublished) {
+    throw new ForbiddenError('Voting is closed as the results have already been published');
+  }
+
   if (poll.responseMode === 'AUTHENTICATED' && !userId) {
     throw new UnauthorizedError('You must be logged in to participate in this poll');
   }

@@ -11,9 +11,9 @@ interface CreatePollPayload {
     questions: any[],
 }
 
-export const createPollDb =  async(pollData:CreatePollPayload, creatorId:string)=> {
-    if(!pollData.questions || pollData.questions.length === 0){
-         throw new BadRequestError('A poll must have at least one question.', 'MISSING_QUESTIONS');
+export const createPollDb = async (pollData: CreatePollPayload, creatorId: string) => {
+    if (!pollData.questions || pollData.questions.length === 0) {
+        throw new BadRequestError('A poll must have at least one question.', 'MISSING_QUESTIONS');
     }
     const newPOll = new pollModel({
         ...pollData,
@@ -24,13 +24,13 @@ export const createPollDb =  async(pollData:CreatePollPayload, creatorId:string)
     return savedPoll
 }
 
-export const getPollByIdDb = async(pollId:string) => {
+export const getPollByIdDb = async (pollId: string) => {
     const poll = await pollModel.findById(pollId)
 
-    if(!poll){
+    if (!poll) {
         throw new NotFoundError('Poll not found or has been deleted', 'POLL_NOT_FOUND');
     }
-    
+
     return poll;
 }
 
@@ -63,7 +63,7 @@ export const getPollAnalytics = async (pollId: string, userId: string) => {
     // Build the results object mapping from poll definition
     const results = poll.questions.map(question => {
         const qId = (question as any)._id?.toString() as string;
-        
+
         // Find total votes for this specific question to calculate percentages
         const questionTotalVotes = analytics
             .filter(a => a._id.questionId.toString() === qId)
@@ -74,7 +74,7 @@ export const getPollAnalytics = async (pollId: string, userId: string) => {
             const optionStat = analytics.find(
                 a => a._id.questionId.toString() === qId && a._id.selectedOptionId.toString() === oId
             );
-            
+
             const voteCount = optionStat ? optionStat.count : 0;
             const percentage = questionTotalVotes > 0 ? parseFloat(((voteCount / questionTotalVotes) * 100).toFixed(2)) : 0;
 
@@ -105,7 +105,7 @@ export const publishPoll = async (pollId: string, userId: string) => {
         throw new ForbiddenError('You are not authorized to publish this poll');
     }
     if (poll.isPublished) {
-        throw new ConflictError('Poll is already published');
+        return resultModel.findOne({ pollId });
     }
 
     const { totalResponses, results } = await getPollAnalytics(pollId, userId);

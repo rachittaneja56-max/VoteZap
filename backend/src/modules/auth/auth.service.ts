@@ -134,13 +134,18 @@ export const loginWithCustomIdp = async (
   try {
     const response = await axios.post<CustomIdpTokenResponse>(
       `${env.CUSTOM_IDP_URL}/api/auth/token`,
-      {
+      new URLSearchParams({
         client_id: env.CUSTOM_IDP_CLIENT_ID,
         client_secret: env.CUSTOM_IDP_CLIENT_SECRET,
         grant_type: 'authorization_code',
         code,
         redirect_uri: env.CUSTOM_IDP_REDIRECT_URI,
         code_verifier: codeVerifier
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       }
     );
 
