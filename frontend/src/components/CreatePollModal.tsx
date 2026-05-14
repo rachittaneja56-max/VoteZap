@@ -167,7 +167,7 @@ export default function CreatePollModal({ open, onClose, onPollCreated }: Create
               type="button"
               onClick={() => void handleCreatePoll()}
               disabled={isSubmitting}
-              className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex min-w-35 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>

@@ -19,7 +19,6 @@ import { apiFetch, parseJsonResponse, getSocketBaseUrl, pollShareUrl } from '../
 import type { AnalyticsPayload, Poll } from '../types/poll'
 import SessionBadge from '../components/SessionBadge'
 
-const PIE_COLORS = ['#2563eb', '#0ea5e9', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#64748b']
 
 function formatRemaining(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now()
