@@ -30,15 +30,25 @@ function newQuestion(): ModalQuestion {
 }
 
 export default function CreatePollModal({ open, onClose, onPollCreated }: CreatePollModalProps) {
+  const getDefaultExpiry = () => {
+    const d = new Date()
+    d.setHours(d.getHours() + 24)
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    return d.toISOString().slice(0, 16)
+  }
+
   const [title, setTitle] = useState('')
-  const [settings, setSettings] = useState<PollSettings>({ expiry: '', isAnonymous: true })
+  const [settings, setSettings] = useState<PollSettings>(() => ({
+    expiry: getDefaultExpiry(),
+    isAnonymous: true
+  }))
   const [questions, setQuestions] = useState<ModalQuestion[]>(() => [newQuestion()])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const resetForm = () => {
     setTitle('')
-    setSettings({ expiry: '', isAnonymous: true })
+    setSettings({ expiry: getDefaultExpiry(), isAnonymous: true })
     setQuestions([newQuestion()])
     setSubmitError(null)
   }

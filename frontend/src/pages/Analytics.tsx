@@ -26,9 +26,12 @@ function formatRemaining(expiresAt: string): string {
   if (ms <= 0) return 'Ended'
   const h = Math.floor(ms / 3_600_000)
   const m = Math.floor((ms % 3_600_000) / 60_000)
+  const s = Math.floor((ms % 60_000) / 1000)
+
   if (h >= 48) return `${Math.ceil(ms / 86_400_000)}d left`
   if (h > 0) return `${h}h ${m}m`
-  return `${m}m left`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s left`
 }
 
 export default function Analytics() {
@@ -41,6 +44,14 @@ export default function Analytics() {
   const [socketLive, setSocketLive] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishMessage, setPublishMessage] = useState<string | null>(null)
+  const [, setTick] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick((t) => t + 1)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const loadInitial = useCallback(async () => {
     if (!pollId) return

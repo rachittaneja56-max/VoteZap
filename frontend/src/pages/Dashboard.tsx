@@ -336,7 +336,9 @@ export default function Dashboard() {
                           {new Date(poll.createdAt).toLocaleDateString(undefined, {
                             month: 'short',
                             day: 'numeric',
-                            year: 'numeric'
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right">
