@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis
 } from 'recharts'
-import { Copy, Download, Share2, QrCode } from 'lucide-react'
+import { Copy, Download, Share2 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { jsPDF } from 'jspdf'
 import { toPng } from 'html-to-image'
@@ -136,52 +136,35 @@ export default function Analytics() {
     }
   }
 
-  // Generates a professional multi-page PDF report of the analytics dashboard
   const handleDownloadPDF = async () => {
     const element = document.getElementById('analytics-content')
     if (!element) return
 
     try {
       console.log('Generating PDF for element:', element)
-      
-      // Capture the dashboard as a high-quality PNG
-      // We force a consistent 1200px width for layout stability in the PDF
+
       const dataUrl = await toPng(element, {
-        quality: 1,
+        quality: 0.95,
         backgroundColor: '#F8FAFC',
         pixelRatio: 2,
         width: 1200,
         style: {
-          width: '1200px',
-          padding: '40px',
+          padding: '20px',
           borderRadius: '0'
         }
       })
 
       const pdf = new jsPDF('p', 'mm', 'a4')
       const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = pdf.internal.pageSize.getHeight()
       const margin = 10
       const contentWidth = pdfWidth - (2 * margin)
-      
+
       const imgProps = pdf.getImageProperties(dataUrl)
-      const imgHeightMM = (imgProps.height * contentWidth) / imgProps.width
-      
-      let heightLeft = imgHeightMM
-      let position = margin
+      const imgHeight = (imgProps.height * contentWidth) / imgProps.width
 
-      // Page 1: Add the first chunk of the image
-      pdf.addImage(dataUrl, 'PNG', margin, position, contentWidth, imgHeightMM)
-      heightLeft -= (pdfHeight - margin * 2)
 
-      // Additional pages: If the content is long, we shift the image up and add new pages
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeightMM + margin
-        pdf.addPage()
-        pdf.addImage(dataUrl, 'PNG', margin, position, contentWidth, imgHeightMM)
-        heightLeft -= (pdfHeight - margin * 2)
-      }
-      
+      pdf.addImage(dataUrl, 'PNG', margin, margin, contentWidth, imgHeight)
+
       pdf.save(`votezap-report-${pollId || 'export'}.pdf`)
       console.log('PDF saved successfully')
     } catch (error) {
@@ -269,9 +252,8 @@ export default function Analytics() {
         {publishMessage && (
           <div className="mx-auto max-w-6xl px-4 pb-3 lg:px-8">
             <p
-              className={`text-sm font-medium ${
-                publishMessage.includes('success') ? 'text-emerald-600' : 'text-red-600'
-              }`}
+              className={`text-sm font-medium ${publishMessage.includes('success') ? 'text-emerald-600' : 'text-red-600'
+                }`}
             >
               {publishMessage}
             </p>
@@ -280,7 +262,6 @@ export default function Analytics() {
       </header>
 
       <div id="analytics-content" className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
-        {/* Top Analysis Grid */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total responses</p>
@@ -318,7 +299,6 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Visual Analytics & QR Section */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
             <div className="mb-4 flex items-center justify-between">
@@ -418,9 +398,9 @@ export default function Analytics() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="shrink-0 rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200">
-                  <QRCodeCanvas 
-                    value={pollId ? pollShareUrl(pollId) : ''} 
-                    size={80} 
+                  <QRCodeCanvas
+                    value={pollId ? pollShareUrl(pollId) : ''}
+                    size={80}
                     level="H"
                   />
                 </div>
@@ -441,8 +421,6 @@ export default function Analytics() {
             </section>
           </div>
         </div>
-
-        {/* Questions Section */}
         <div className="space-y-6 pt-4">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold tracking-tight text-slate-900">Detailed Results</h2>
