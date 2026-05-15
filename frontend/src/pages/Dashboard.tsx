@@ -18,6 +18,7 @@ import { apiFetch, parseJsonResponse, ApiError, pollShareUrl } from '../lib/api'
 import type { PollListRow } from '../types/poll'
 import CreatePollModal from '../components/CreatePollModal'
 import SessionBadge from '../components/SessionBadge'
+import { useAuth } from '../lib/auth-context'
 
 function rowStatus(p: PollListRow): 'Active' | 'Expired' | 'Published' {
   if (p.isPublished) return 'Published'
@@ -27,6 +28,7 @@ function rowStatus(p: PollListRow): 'Active' | 'Expired' | 'Published' {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [polls, setPolls] = useState<PollListRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -143,9 +145,9 @@ export default function Dashboard() {
               <HomeIcon className="size-5" aria-hidden />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Overview</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Overview</h1>
               <p className="mt-0.5 text-sm font-medium text-slate-500">
-                Welcome back, <span className="text-slate-900">User</span>. Here&apos;s your activity.
+                Welcome back, <span className="text-slate-900 font-bold">{user?.name || user?.email || 'User'}</span>. Here&apos;s your activity.
               </p>
             </div>
           </div>
@@ -154,7 +156,7 @@ export default function Dashboard() {
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
               disabled={isLoading}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5 hover:bg-blue-700 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus className="size-4 shrink-0" aria-hidden />
               Create New Poll
@@ -245,7 +247,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="mb-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <h2 className="text-lg font-bold tracking-tight text-slate-900">Your Polls</h2>
+          <div className="flex w-full items-center gap-3 sm:w-auto">
           <div className="relative w-full sm:max-w-xs sm:flex-1">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
@@ -267,9 +271,9 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => setFilter(tab)}
                 disabled={isLoading}
-                className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${filter === tab
-                  ? 'bg-[#F8FAFC] text-slate-900 ring-1 ring-slate-200'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                className={`flex-1 rounded-lg px-5 py-2 text-sm font-bold transition-all sm:flex-none ${filter === tab
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                   } disabled:opacity-50`}
               >
                 {tab}
@@ -277,11 +281,12 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/5">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[880px] border-collapse text-left text-sm">
-              <thead className="border-b border-slate-200 bg-[#F8FAFC] text-xs font-medium uppercase tracking-wide text-slate-500">
+              <thead className="border-b border-slate-200 bg-slate-50/50 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 <tr>
                   <th className="whitespace-nowrap px-4 py-3">Poll Name</th>
                   <th className="whitespace-nowrap px-4 py-3">Status</th>

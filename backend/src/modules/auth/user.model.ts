@@ -2,6 +2,7 @@ import mongoose, { Schema, type HydratedDocument } from 'mongoose';
 
 export interface IUser {
   email: string;
+  name?: string;
   googleId?: string;
   customIdpId?: string;
   refreshTokenHash?: string;
@@ -20,6 +21,7 @@ const UserSchema = new Schema<IUser>({
     lowercase: true,
     trim: true
   },
+  name: { type: String, required: false },
   googleId: { type: String, required: false },
   customIdpId: { type: String, required: false },
   refreshTokenHash: { type: String, required: false, select: false },

@@ -5,7 +5,7 @@ import { UnauthorizedError } from "../../utils/AppError";
 import { sendSuccess } from "../../utils/ResponseHandler";
 
 export const listPolls = async (req: AuthenticatedRequest, res: Response) => {
-    const creatorId = req.user?.userId;
+    const creatorId = req.user?.userId || (req.user as any)?.id;
     if (!creatorId) {
         throw new UnauthorizedError('User ID missing from token', 'UNAUTHORIZED');
     }
@@ -79,6 +79,7 @@ export const publish = async (req: AuthenticatedRequest, res: Response) => {
             data: publishedResult
         });
     } catch (error) {
+        console.error(`[Publish Error] Poll ID: ${req.params.id}, User ID: ${req.user?.userId}`, error);
         throw error;
     }
 }

@@ -97,6 +97,7 @@ export default function Home() {
   const [activeStep, setActiveStep] = useState<Step>(1)
   const [anonymousVoting, setAnonymousVoting] = useState(true)
   const [heroSelection, setHeroSelection] = useState<string | null>('react')
+  const [mockVoted, setMockVoted] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const liveUrlBase = import.meta.env.VITE_APP_URL || 'http://localhost:5173'
@@ -111,6 +112,18 @@ export default function Home() {
       setCopied(false)
     }
   }
+
+  const handleSubmitMockVote = () => {
+    if (heroSelection) {
+      setMockVoted(true)
+    }
+  }
+
+  const mockResults = [
+    { name: 'React', value: 45 },
+    { name: 'Vue', value: 30 },
+    { name: 'Svelte', value: 25 }
+  ]
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-slate-200">
@@ -164,38 +177,73 @@ export default function Home() {
                     Live
                   </span>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  {[
-                    { id: 'react', label: 'React' },
-                    { id: 'vue', label: 'Vue' },
-                    { id: 'svelte', label: 'Svelte' }
-                  ].map((opt) => (
-                    <li key={opt.id}>
-                      <button
-                        type="button"
-                        onClick={() => setHeroSelection(opt.id)}
-                        className={`flex w-full items-center justify-between rounded-xl border-2 px-5 py-4 text-left font-medium transition-all ${heroSelection === opt.id
-                          ? 'border-slate-900 bg-slate-50 text-slate-900 shadow-sm'
-                          : 'border-slate-100 bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50'
-                          }`}
-                      >
-                        <span className="text-base">{opt.label}</span>
-                        <span
-                          className={`flex size-5 items-center justify-center rounded-full border-2 transition-colors ${heroSelection === opt.id ? 'border-slate-900 bg-slate-900' : 'border-slate-300'
-                            }`}
-                        >
-                          {heroSelection === opt.id && <span className="size-2 rounded-full bg-white" />}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  type="button"
-                  className="w-full rounded-xl bg-slate-900 py-3.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/10"
-                >
-                  Submit Vote
-                </button>
+                {mockVoted ? (
+                  <div className="animate-in fade-in zoom-in duration-500 py-4 text-center">
+                    <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                      <Check className="size-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900">Vote Recorded!</h3>
+                    <p className="mb-6 text-sm text-slate-500 font-medium">Here&apos;s how the community is voting live.</p>
+
+                    <div className="h-48 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={mockResults} layout="vertical" margin={{ left: -20, right: 20 }}>
+                          <XAxis type="number" hide />
+                          <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#0f172a' }} />
+                          <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                          <Bar dataKey="value" fill="#0f172a" radius={[0, 4, 4, 0]} barSize={24} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMockVoted(false)
+                        setHeroSelection('react')
+                      }}
+                      className="mt-4 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors underline underline-offset-4"
+                    >
+                      Try another option
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <ul className="space-y-3 mb-8">
+                      {[
+                        { id: 'react', label: 'React' },
+                        { id: 'vue', label: 'Vue' },
+                        { id: 'svelte', label: 'Svelte' }
+                      ].map((opt) => (
+                        <li key={opt.id}>
+                          <button
+                            type="button"
+                            onClick={() => setHeroSelection(opt.id)}
+                            className={`flex w-full items-center justify-between rounded-xl border-2 px-5 py-4 text-left font-medium transition-all ${heroSelection === opt.id
+                              ? 'border-slate-900 bg-slate-50 text-slate-900 shadow-sm'
+                              : 'border-slate-100 bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50'
+                              }`}
+                          >
+                            <span className="text-base">{opt.label}</span>
+                            <span
+                              className={`flex size-5 items-center justify-center rounded-full border-2 transition-colors ${heroSelection === opt.id ? 'border-slate-900 bg-slate-900' : 'border-slate-300'
+                                }`}
+                            >
+                              {heroSelection === opt.id && <span className="size-2 rounded-full bg-white" />}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={handleSubmitMockVote}
+                      className="w-full rounded-xl bg-slate-900 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-slate-900/10"
+                    >
+                      Submit Vote
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

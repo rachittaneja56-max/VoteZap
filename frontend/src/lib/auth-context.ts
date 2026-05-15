@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react'
 export interface AuthUser {
   id: string
   email: string
+  name?: string
   googleId?: string
   customIdpId?: string
 }

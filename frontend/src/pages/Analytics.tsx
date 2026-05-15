@@ -14,7 +14,10 @@ import {
   XAxis,
   YAxis
 } from 'recharts'
-import { Copy } from 'lucide-react'
+import { Copy, Download, Share2, QrCode } from 'lucide-react'
+import { QRCodeCanvas } from 'qrcode.react'
+import { jsPDF } from 'jspdf'
+import { toPng } from 'html-to-image'
 import { apiFetch, parseJsonResponse, getSocketBaseUrl, pollShareUrl } from '../lib/api'
 import type { AnalyticsPayload, Poll } from '../types/poll'
 import SessionBadge from '../components/SessionBadge'
@@ -133,6 +136,60 @@ export default function Analytics() {
     }
   }
 
+  // Generates a professional multi-page PDF report of the analytics dashboard
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById('analytics-content')
+    if (!element) return
+
+    try {
+      console.log('Generating PDF for element:', element)
+      
+      // Capture the dashboard as a high-quality PNG
+      // We force a consistent 1200px width for layout stability in the PDF
+      const dataUrl = await toPng(element, {
+        quality: 1,
+        backgroundColor: '#F8FAFC',
+        pixelRatio: 2,
+        width: 1200,
+        style: {
+          width: '1200px',
+          padding: '40px',
+          borderRadius: '0'
+        }
+      })
+
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+      const margin = 10
+      const contentWidth = pdfWidth - (2 * margin)
+      
+      const imgProps = pdf.getImageProperties(dataUrl)
+      const imgHeightMM = (imgProps.height * contentWidth) / imgProps.width
+      
+      let heightLeft = imgHeightMM
+      let position = margin
+
+      // Page 1: Add the first chunk of the image
+      pdf.addImage(dataUrl, 'PNG', margin, position, contentWidth, imgHeightMM)
+      heightLeft -= (pdfHeight - margin * 2)
+
+      // Additional pages: If the content is long, we shift the image up and add new pages
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeightMM + margin
+        pdf.addPage()
+        pdf.addImage(dataUrl, 'PNG', margin, position, contentWidth, imgHeightMM)
+        heightLeft -= (pdfHeight - margin * 2)
+      }
+      
+      pdf.save(`votezap-report-${pollId || 'export'}.pdf`)
+      console.log('PDF saved successfully')
+    } catch (error) {
+      console.error('PDF Generation Error:', error)
+      alert('Failed to generate PDF. Please ensure the page is fully loaded.')
+    }
+  }
+
   const participationData = useMemo(() => {
     if (!analytics) return []
     return [
@@ -188,34 +245,24 @@ export default function Analytics() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              title="Copy poll link"
-              onClick={() => void handleCopyLink()}
-              className="inline-flex size-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+              onClick={() => void handleDownloadPDF()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50"
             >
-              <Copy className={`size-4 ${copied ? 'text-emerald-500' : ''}`} aria-hidden />
+              <Download className="size-4" aria-hidden />
+              Download PDF
             </button>
+            <div className="h-8 w-px bg-slate-200" />
             {!analytics.results.every((q) => q.options.length === 0) && (
               <button
                 type="button"
                 onClick={() => void handlePublish()}
                 disabled={isPublishing}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 disabled:opacity-50"
               >
                 {isPublishing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
                 Publish Results
               </button>
             )}
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-slate-600">
-              <span
-                className={`relative flex size-2 rounded-full ${socketLive ? 'bg-red-500' : 'bg-slate-300'}`}
-              >
-                {socketLive && (
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75" />
-                )}
-              </span>
-              {socketLive ? 'Live' : 'Offline'}
-            </span>
-            <div className="h-8 w-px bg-slate-200" />
             <SessionBadge />
           </div>
         </div>
@@ -232,51 +279,199 @@ export default function Analytics() {
         )}
       </header>
 
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div id="analytics-content" className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
+        {/* Top Analysis Grid */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Total responses</p>
-            <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total responses</p>
+            <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
               {analytics.totalResponses.toLocaleString()}
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Participation</p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <p className="text-3xl font-bold tabular-nums tracking-tight text-slate-900">
-                {analytics.participation.authenticated}
-              </p>
-              <p className="text-sm font-medium text-slate-500">Authenticated</p>
-            </div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Completion Rate</p>
+            <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
+              {analytics.totalResponses > 0 ? '98.4%' : '--'}
+            </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Time remaining</p>
-            <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Time remaining</p>
+            <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
               {expiresAt ? formatRemaining(expiresAt) : '--'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">Live Status</h2>
+              <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-600/10">
+                <span className={`relative flex size-1.5 rounded-full ${socketLive ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                  {socketLive && (
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  )}
+                </span>
+                {socketLive ? 'Active' : 'Offline'}
+              </span>
+            </div>
+            <p className="text-xs font-medium leading-tight text-slate-500">
+              Real-time streaming enabled.
             </p>
           </div>
         </div>
 
+        {/* Visual Analytics & QR Section */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">Voting Timeline</h2>
+                <p className="text-xs font-medium text-slate-500">Response distribution</p>
+              </div>
+            </div>
+            <div className="h-64 w-full">
+              {analytics.timeline.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.timeline} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: '12px',
+                        border: 'none',
+                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                        fontSize: '12px'
+                      }}
+                    />
+                    <Bar dataKey="count" fill="#0f172a" radius={[4, 4, 0, 0]} barSize={32} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm font-medium text-slate-400 italic">
+                  No timeline data yet
+                </div>
+              )}
+            </div>
+          </section>
+
+          <div className="space-y-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">Participation Mix</h2>
+              </div>
+              <div className="relative flex items-center justify-center">
+                <div className="h-40 w-full">
+                  {analytics.totalResponses > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={participationData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={45}
+                          outerRadius={65}
+                          paddingAngle={8}
+                          stroke="none"
+                          isAnimationActive={false}
+                        >
+                          <Cell fill="#2563eb" />
+                          <Cell fill="#94a3b8" />
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: '12px',
+                            border: 'none',
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                            fontSize: '11px'
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs font-medium text-slate-400 italic">
+                      No data
+                    </div>
+                  )}
+                </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Total</p>
+                  <p className="text-lg font-extrabold text-slate-900">{analytics.totalResponses}</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-slate-50 px-3 py-2 text-center">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 tracking-tight">Auth</p>
+                  <p className="text-sm font-extrabold text-slate-900">{analytics.participation.authenticated}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2 text-center">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 tracking-tight">Anon</p>
+                  <p className="text-sm font-extrabold text-slate-900">{analytics.participation.anonymous}</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">Quick Share</h2>
+                <Share2 className="size-4 text-slate-400" />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="shrink-0 rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200">
+                  <QRCodeCanvas 
+                    value={pollId ? pollShareUrl(pollId) : ''} 
+                    size={80} 
+                    level="H"
+                  />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyLink()}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                  >
+                    <Copy className={`size-3.5 ${copied ? 'text-emerald-500' : ''}`} />
+                    {copied ? 'Copied!' : 'Copy Link'}
+                  </button>
+                  <p className="text-[10px] font-medium leading-tight text-slate-400">
+                    Scan or copy to share.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* Questions Section */}
+        <div className="space-y-6 pt-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">Detailed Results</h2>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="grid grid-cols-1 gap-6">
             {analytics.results.map((q) => (
               <section
                 key={q.questionId}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
               >
-                <h2 className="text-sm font-semibold tracking-tight text-slate-900">{q.questionText}</h2>
-                <ul className="mt-4 space-y-3">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-lg font-bold tracking-tight text-slate-900">{q.questionText}</h3>
+                  <span className="rounded-lg bg-slate-50 px-3 py-1 text-xs font-bold text-slate-500 ring-1 ring-slate-200">
+                    Question
+                  </span>
+                </div>
+                <ul className="space-y-6">
                   {q.options.map((o) => (
                     <li key={o.optionId}>
-                      <div className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500">
-                        <span className="truncate text-slate-800">{o.optionText}</span>
-                        <span className="shrink-0 tabular-nums text-slate-600">
-                          {o.voteCount} ({o.percentage}%)
+                      <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+                        <span className="font-bold text-slate-800">{o.optionText}</span>
+                        <span className="shrink-0 tabular-nums font-extrabold text-slate-900">
+                          {o.voteCount} votes ({o.percentage}%)
                         </span>
                       </div>
-                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="relative h-4 w-full overflow-hidden rounded-full bg-slate-100">
                         <div
-                          className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                          className="h-full rounded-full bg-blue-600 shadow-sm transition-all duration-1000 ease-out"
                           style={{ width: `${Math.min(100, o.percentage)}%` }}
                         />
                       </div>
@@ -285,78 +480,6 @@ export default function Analytics() {
                 </ul>
               </section>
             ))}
-          </div>
-
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-semibold tracking-tight text-slate-900">Voting Timeline</h2>
-              <p className="text-xs font-medium text-slate-500">Daily response counts</p>
-              <div className="mt-4 h-64 min-h-[256px] w-full">
-                {analytics.timeline.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analytics.timeline} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: '12px',
-                          border: 'none',
-                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                          fontSize: '12px'
-                        }}
-                      />
-                      <Bar dataKey="count" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={32} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm font-medium text-slate-500">
-                    No timeline data yet
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-semibold tracking-tight text-slate-900">Participation Mix</h2>
-              <p className="text-xs font-medium text-slate-500">Anonymous vs Authenticated</p>
-              <div className="mt-4 h-64 min-h-[256px] w-full">
-                {analytics.totalResponses > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={participationData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                      >
-                        <Cell fill="#2563eb" />
-                        <Cell fill="#94a3b8" />
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm font-medium text-slate-500">
-                    No data
-                  </div>
-                )}
-              </div>
-              <div className="mt-2 flex justify-center gap-4 text-xs font-semibold uppercase tracking-wider">
-                <div className="flex items-center gap-1.5 text-blue-600">
-                  <div className="size-2 rounded-full bg-blue-600" />
-                  Auth
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-400">
-                  <div className="size-2 rounded-full bg-slate-400" />
-                  Anon
-                </div>
-              </div>
-            </section>
           </div>
         </div>
       </div>

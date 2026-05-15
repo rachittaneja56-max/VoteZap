@@ -34,7 +34,8 @@ export default function SessionBadge() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-slate-900/5">
           <div className="bg-slate-50 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Logged in as</p>
-            <p className="mt-0.5 truncate text-sm font-bold text-slate-900">{user.email}</p>
+            {user.name && <p className="mt-1 truncate text-sm font-bold text-slate-900">{user.name}</p>}
+            <p className={`mt-0.5 truncate text-xs font-medium ${user.name ? 'text-slate-500' : 'text-slate-900 font-bold'}`}>{user.email}</p>
           </div>
           <div className="p-2">
             <Link

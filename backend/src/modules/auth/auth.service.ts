@@ -23,6 +23,7 @@ interface CustomIdpTokenResponse {
 interface DecodedIdToken {
   email?: unknown;
   sub?: unknown;
+  name?: unknown;
 }
 
 interface AuthSession {
@@ -37,12 +38,13 @@ const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 const linkOrCreateUser = async (
   email: string,
   providerField: 'googleId' | 'customIdpId',
-  providerId: string
+  providerId: string,
+  name?: string
 ): Promise<UserDocument> => {
   const user = await User.findOneAndUpdate(
     { email: normalizeEmail(email) },
     {
-      $setOnInsert: { email: normalizeEmail(email) },
+      $setOnInsert: { email: normalizeEmail(email), name },
       $set: { [providerField]: providerId }
     },
     {
@@ -79,6 +81,7 @@ export const buildAuthResponse = (user: UserDocument) => ({
   user: {
     id: user._id.toString(),
     email: user.email,
+    name: user.name,
     googleId: user.googleId,
     customIdpId: user.customIdpId
   }
@@ -97,7 +100,7 @@ export const loginWithGoogle = async (idToken: string): Promise<AuthSession> => 
       throw new UnauthorizedError('Authentication failed');
     }
 
-    const user = await linkOrCreateUser(payload.email, 'googleId', payload.sub);
+    const user = await linkOrCreateUser(payload.email, 'googleId', payload.sub, payload.name);
     return issueAuthSession(user);
   } catch (error: unknown) {
     if (error instanceof UnauthorizedError) {
@@ -144,6 +147,7 @@ export const loginWithCustomIdp = async (
 
   let email: string | undefined;
   let sub: string | undefined;
+  let name: string | undefined;
 
   try {
     const userInfoResponse = await axios.get(`${env.CUSTOM_IDP_URL}/api/auth/userinfo`, {
@@ -154,6 +158,7 @@ export const loginWithCustomIdp = async (
 
     email = userInfoResponse.data?.email;
     sub = userInfoResponse.data?.sub;
+    name = userInfoResponse.data?.name || userInfoResponse.data?.preferred_username;
   } catch (err) {
     console.warn('Custom IdP UserInfo Error, falling back to id_token:', err);
   }
@@ -167,6 +172,9 @@ export const loginWithCustomIdp = async (
       if (!sub && typeof decoded.sub === 'string') {
         sub = decoded.sub;
       }
+      if (!name && typeof decoded.name === 'string') {
+        name = decoded.name;
+      }
     }
   }
 
@@ -174,7 +182,7 @@ export const loginWithCustomIdp = async (
     throw new UnauthorizedError('Authentication failed: Missing email or sub from IdP');
   }
 
-  const user = await linkOrCreateUser(email, 'customIdpId', sub);
+  const user = await linkOrCreateUser(email, 'customIdpId', sub, name);
   return issueAuthSession(user);
 };
 

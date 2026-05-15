@@ -287,18 +287,18 @@ export default function Vote() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] px-4 py-10">
+    <div className="min-h-screen bg-[#F8FAFC] px-4 py-10 font-sans selection:bg-slate-200">
       <div className="mx-auto max-w-lg">
         <form
           onSubmit={(e) => void handleSubmit(e)}
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-8"
         >
           <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{poll.title}</h1>
           {poll.description && (
-            <p className="mt-2 text-sm font-medium text-slate-500">{poll.description}</p>
+            <p className="mt-2 text-sm font-medium text-slate-500 leading-relaxed">{poll.description}</p>
           )}
-          <p className="mt-1 text-xs font-medium text-slate-500">
-            {poll.responseMode === 'AUTHENTICATED' ? 'Sign-in may be required to submit.' : 'Anonymous voting'}
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 ring-1 ring-slate-200">
+            {poll.responseMode === 'AUTHENTICATED' ? 'Authenticated Only' : 'Anonymous Voting'}
           </p>
 
           <div className="mt-8 space-y-8">
@@ -314,21 +314,28 @@ export default function Vote() {
                     return (
                       <li key={opt._id}>
                         <label
-                          className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+                          className={`flex cursor-pointer items-center justify-between rounded-xl border-2 px-4 py-4 text-sm font-bold transition-all ${
                             checked
-                              ? 'border-blue-500 bg-blue-50/60 text-blue-900'
-                              : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300'
+                              ? 'border-slate-900 bg-slate-50 text-slate-900'
+                              : 'border-slate-100 bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50'
                           }`}
                         >
+                          <span>{opt.text}</span>
                           <input
                             type="radio"
-                            className="size-4 border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                            className="hidden"
                             name={`question-${question._id}`}
                             value={opt._id}
                             checked={checked}
                             onChange={() => handleSelect(question._id, opt._id)}
                           />
-                          <span>{opt.text}</span>
+                          <span
+                            className={`flex size-5 items-center justify-center rounded-full border-2 transition-colors ${
+                              checked ? 'border-slate-900 bg-slate-900' : 'border-slate-300'
+                            }`}
+                          >
+                            {checked && <span className="size-2 rounded-full bg-white" />}
+                          </span>
                         </label>
                       </li>
                     )
@@ -348,7 +355,7 @@ export default function Vote() {
             <button
               type="submit"
               disabled={isSubmitting || !mandatoryOk}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-medium text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-4 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
