@@ -52,8 +52,9 @@ export default function Login() {
   const [oauthBusy, setOauthBusy] = useState(false)
   const [oauthError, setOauthError] = useState<string | null>(null)
 
-  const fromPath =
-    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard'
+  const query = new URLSearchParams(location.search)
+  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard'
+  const redirectPath = query.get('redirect') || fromPath
 
   useEffect(() => {
     if (!config.googleClientId || !googleBtnRef.current) return
@@ -79,7 +80,7 @@ export default function Login() {
               })
               const data = await parseJsonResponse(res)
               signIn(data)
-              navigate(fromPath, { replace: true })
+              navigate(redirectPath, { replace: true })
             } catch (e) {
               setOauthError(e instanceof Error ? e.message : 'Google sign-in failed')
             } finally {
@@ -108,27 +109,27 @@ export default function Login() {
       cancelled = true
       window.google?.accounts?.id?.cancel()
     }
-  }, [config.googleClientId, fromPath, navigate, signIn])
+  }, [config.googleClientId, redirectPath, navigate, signIn])
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(fromPath, { replace: true })
+      navigate(redirectPath, { replace: true })
     }
-  }, [fromPath, isAuthenticated, navigate, user])
+  }, [redirectPath, isAuthenticated, navigate, user])
 
   const startRachitsAuth = async () => {
     setOauthError(null)
     setOauthBusy(true)
     try {
       if (!config.customIdpUrl || !config.customIdpClientId || !config.customIdpRedirectUri) {
-        throw new Error('RachitsAuth is not configured. Check the frontend environment file.')
+        throw new Error('RachitsAuth is not configured.')
       }
 
       const verifier = generateRandomString(64)
       const state = generateRandomString(32)
       const challenge = await sha256Base64Url(verifier)
       storePkceSession(verifier, state)
-      sessionStorage.setItem('authRedirectTo', fromPath)
+      sessionStorage.setItem('authRedirectTo', redirectPath)
 
       const base = config.customIdpUrl.replace(/\/$/, '')
       const url = new URL(`${base}/api/auth/authorize`)
@@ -161,7 +162,6 @@ export default function Login() {
 
       <div className="flex flex-1 flex-col items-center justify-center px-4 pb-20 sm:px-6">
         <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10">
-
           <div className="mb-10 text-center flex flex-col items-center">
             <div className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100/50 drop-shadow-sm">
               <ZapIcon className="size-8 text-[#ff6b35]" />
@@ -201,7 +201,6 @@ export default function Login() {
           <p className="mt-8 text-center text-[13px] font-medium text-slate-400">
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
-
         </div>
       </div>
     </div>

@@ -6,8 +6,9 @@ let io: SocketIOServer;
 export const initSocket = (server: HTTPServer): SocketIOServer => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: '*',
-      methods: ['GET', 'POST']
+      origin: 'https://votezap.rachittaneja.in',
+      methods: ['GET', 'POST'],
+      credentials: true
     }
   });
 

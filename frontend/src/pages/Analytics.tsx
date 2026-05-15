@@ -17,11 +17,9 @@ import {
 import { Copy, Download, Share2 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { jsPDF } from 'jspdf'
-import { toPng } from 'html-to-image'
 import { apiFetch, parseJsonResponse, getSocketBaseUrl, pollShareUrl } from '../lib/api'
 import type { AnalyticsPayload, Poll } from '../types/poll'
 import SessionBadge from '../components/SessionBadge'
-
 
 function formatRemaining(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now()
@@ -137,39 +135,101 @@ export default function Analytics() {
   }
 
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('analytics-content')
-    if (!element) return
+    if (!analytics) return
 
     try {
-      console.log('Generating PDF for element:', element)
-
-      const dataUrl = await toPng(element, {
-        quality: 0.95,
-        backgroundColor: '#F8FAFC',
-        pixelRatio: 2,
-        width: 1200,
-        style: {
-          padding: '20px',
-          borderRadius: '0'
-        }
-      })
-
       const pdf = new jsPDF('p', 'mm', 'a4')
       const pdfWidth = pdf.internal.pageSize.getWidth()
-      const margin = 10
+      const margin = 15
       const contentWidth = pdfWidth - (2 * margin)
+      let y = 20
 
-      const imgProps = pdf.getImageProperties(dataUrl)
-      const imgHeight = (imgProps.height * contentWidth) / imgProps.width
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(22)
+      pdf.setTextColor(15, 23, 42)
+      pdf.text(pollTitle || 'Poll Analytics Report', margin, y)
+      y += 10
 
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(10)
+      pdf.setTextColor(100, 116, 139)
+      pdf.text(`Generated on ${new Date().toLocaleString()} · VoteZap Analytics`, margin, y)
+      y += 15
 
-      pdf.addImage(dataUrl, 'PNG', margin, margin, contentWidth, imgHeight)
+      pdf.setDrawColor(226, 232, 240)
+      pdf.line(margin, y, pdfWidth - margin, y)
+      y += 15
 
-      pdf.save(`votezap-report-${pollId || 'export'}.pdf`)
-      console.log('PDF saved successfully')
+      pdf.setFontSize(12)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(15, 23, 42)
+      pdf.text('Overall Participation', margin, y)
+      y += 10
+
+      const stats = [
+        { label: 'Total Responses', value: analytics.totalResponses.toString() },
+        { label: 'Authenticated', value: analytics.participation.authenticated.toString() },
+        { label: 'Anonymous', value: analytics.participation.anonymous.toString() }
+      ]
+
+      stats.forEach((stat, i) => {
+        const x = margin + (i * (contentWidth / 3))
+        pdf.setFontSize(9)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(100, 116, 139)
+        pdf.text(stat.label, x, y)
+        pdf.setFontSize(14)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(15, 23, 42)
+        pdf.text(stat.value, x, y + 7)
+      })
+      y += 25
+
+      analytics.results.forEach((q, qIndex) => {
+        if (y > 250) {
+          pdf.addPage()
+          y = 20
+        }
+
+        pdf.setFontSize(12)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(15, 23, 42)
+        pdf.text(`${qIndex + 1}. ${q.questionText}`, margin, y)
+        y += 10
+
+        q.options.forEach((o) => {
+          if (y > 270) {
+            pdf.addPage()
+            y = 20
+          }
+
+          pdf.setFontSize(9)
+          pdf.setFont('helvetica', 'normal')
+          pdf.setTextColor(30, 41, 59)
+          pdf.text(o.optionText, margin, y)
+          
+          const voteText = `${o.voteCount} votes (${o.percentage}%)`
+          const textWidth = pdf.getTextWidth(voteText)
+          pdf.text(voteText, pdfWidth - margin - textWidth, y)
+          y += 4
+
+          pdf.setFillColor(241, 245, 249)
+          pdf.roundedRect(margin, y, contentWidth, 3, 1.5, 1.5, 'F')
+          
+          const barWidth = (o.percentage / 100) * contentWidth
+          if (barWidth > 0) {
+            pdf.setFillColor(37, 99, 235)
+            pdf.roundedRect(margin, y, barWidth, 3, 1.5, 1.5, 'F')
+          }
+          y += 12
+        })
+        y += 10
+      })
+
+      pdf.save(`votezap-analytics-${pollId || 'report'}.pdf`)
     } catch (error) {
       console.error('PDF Generation Error:', error)
-      alert('Failed to generate PDF. Please ensure the page is fully loaded.')
+      alert('Failed to generate PDF.')
     }
   }
 

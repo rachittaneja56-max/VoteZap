@@ -10,7 +10,7 @@ interface IAnswerInput {
   selectedOptionId: string;
 }
 
-export const submitResponse = async (pollId: string, userId: string | undefined, answers: IAnswerInput[]): Promise<IResponse> => {
+export const submitResponse = async (pollId: string, userId: string | undefined, answers: IAnswerInput[], anonymousId?: string): Promise<IResponse> => {
   const poll = await Poll.findById(pollId);
 
   if (!poll) {
@@ -28,6 +28,20 @@ export const submitResponse = async (pollId: string, userId: string | undefined,
     throw new UnauthorizedError('You must be logged in to participate in this poll');
   }
 
+  const duplicateQuery: any = { pollId };
+  if (userId) {
+    duplicateQuery.userId = userId;
+  } else if (anonymousId) {
+    duplicateQuery.anonymousId = anonymousId;
+  }
+
+  if (userId || anonymousId) {
+    const existing = await ResponseModel.findOne(duplicateQuery);
+    if (existing) {
+      throw new ForbiddenError('You have already voted in this poll');
+    }
+  }
+
   const mandatoryQuestionIds = poll.questions
     .filter(q => q.isMandatory)
     .map(q => (q as any)._id?.toString() as string);
@@ -42,6 +56,7 @@ export const submitResponse = async (pollId: string, userId: string | undefined,
   const newResponse = new ResponseModel({
     pollId,
     userId: userId || null,
+    anonymousId: anonymousId || null,
     answers
   });
 

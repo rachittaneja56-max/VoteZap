@@ -28,7 +28,7 @@ function rowStatus(p: PollListRow): 'Active' | 'Expired' | 'Published' {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const [polls, setPolls] = useState<PollListRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -46,18 +46,19 @@ export default function Dashboard() {
       )
       setPolls(data.polls ?? [])
     } catch (e) {
-      const msg =
-        e instanceof ApiError && e.code === 'UNAUTHORIZED'
-          ? 'Please sign in to view your dashboard.'
-          : e instanceof Error
-            ? e.message
-            : 'Failed to load polls'
-      setLoadError(msg)
+      if (e instanceof ApiError && e.code === 'UNAUTHORIZED') {
+        if (user) {
+          void logout()
+        }
+        setLoadError('Please sign in to view your dashboard.')
+      } else {
+        setLoadError(e instanceof Error ? e.message : 'Failed to load polls')
+      }
       setPolls([])
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [logout, user])
 
   useEffect(() => {
     queueMicrotask(() => {

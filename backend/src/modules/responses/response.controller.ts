@@ -7,9 +7,10 @@ export const submit = async (req: AuthenticatedRequest, res: Response): Promise<
   try {
     const pollId = req.params.pollId as string;
     const answers = req.body.answers as Array<{ questionId: string, selectedOptionId: string }> || [];
+    const anonymousId = req.body.anonymousId as string;
     const userId = req.user?.userId as string;
 
-    const response = await responseService.submitResponse(pollId, userId, answers);
+    const response = await responseService.submitResponse(pollId, userId, answers, anonymousId);
 
     sendSuccess(res, 'Response submitted successfully', { response }, 201);
   } catch (error) {

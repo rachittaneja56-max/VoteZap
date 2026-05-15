@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import FingerprintJS from '@fingerprintjs/fingerprintjs'
 import { apiFetch, parseJsonResponse, ApiError } from '../lib/api'
 import type { Poll, PollQuestion, PublishedResult } from '../types/poll'
 
@@ -74,6 +75,16 @@ export default function Vote() {
   const [submitDone, setSubmitDone] = useState(false)
   const [loadedAt, setLoadedAt] = useState<number | null>(null)
   const [publishedResult, setPublishedResult] = useState<PublishedResult | null>(null)
+  const [fingerprint, setFingerprint] = useState<string | null>(null)
+
+  useEffect(() => {
+    const initFingerprint = async () => {
+      const fp = await FingerprintJS.load()
+      const result = await fp.get()
+      setFingerprint(result.visitorId)
+    }
+    void initFingerprint()
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -172,7 +183,10 @@ export default function Vote() {
       await parseJsonResponse(
         await apiFetch(`/responses/${pollId}/submit`, {
           method: 'POST',
-          body: JSON.stringify({ answers })
+          body: JSON.stringify({ 
+            answers,
+            anonymousId: poll.responseMode === 'ANONYMOUS' ? fingerprint : undefined
+          })
         })
       )
       setSubmitDone(true)
@@ -209,7 +223,7 @@ export default function Vote() {
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
             {loginRequired && (
               <Link
-                to="/login"
+                to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
                 className="inline-flex justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
               >
                 Sign in
